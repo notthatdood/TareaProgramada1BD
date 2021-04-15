@@ -6,6 +6,6 @@ Create procedure EditarPuestos
 
 	Update Puesto
 	Set Nombre=@Nombre, SalarioXHora=@SalarioXHora
-	Where Nombre=@Nombre
+	Where Nombre=@Nombre and Activo='1'
 
 GO

@@ -14,6 +14,6 @@ Create procedure EditarEmpleados
 	ValorDocumentoIdentificacion=@ValorDocumentoIdentificacion, FechaNacimiento=@FechaNacimiento,
 	Puesto=@Puesto, IdDepartamento=@IdDepartamento
 
-	Where Id=@Id
+	Where Id=@Id and Activo='1'
 
 GO
