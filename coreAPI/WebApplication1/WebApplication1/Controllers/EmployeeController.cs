@@ -26,7 +26,7 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public JsonResult Get()
         {
-            string query = @"select EmployeeId, EmployeeName, Department from dbo.Employee";
+            string query = @"EXEC ListarEmpleados;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -49,14 +49,14 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public JsonResult Post(Employee emp)
         {
-            string query = @"
-                insert into dbo.Employee 
-                (EmployeeName, Department)
-                values
-                (
-                '" + emp.EmployeeName + @"'
-                ,'" + emp.Department + @"'
-                )";
+
+            string query = @"EXEC InsertarEmpleados '" + emp.EmployeeName + @"'
+                , '" + emp.IdentificationDocTypeId + @"'
+                , '" + emp.IdentificationDocValue + @"'
+                , '" + emp.DepartmentId + @"'
+                , '" + emp.PositionName + @"'
+                , '" + emp.DateOfBirth + @"'
+                ;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -78,12 +78,17 @@ namespace WebApplication1.Controllers
         [HttpPut]
         public JsonResult Put(Employee emp)
         {
-            string query = @"
-                update dbo.Employee set
-                EmployeeName = '" + emp.EmployeeName + @"'
-                ,Department = '" + emp.Department + @"'
-                where EmployeeId = " + emp.EmployeeId + @"
-                ";
+            string query = @"EXEC EditarEmpleados
+                '" + emp.EmployeeId + @"'
+                ,'" + emp.EmployeeName + @"'
+                ,'" + emp.IdentificationDocTypeId + @"'
+                ,'" + emp.IdentificationDocValue + @"'
+                ,'" + emp.DateOfBirth + @"'
+                ,'" + emp.PositionName + @"'
+                ,'" + emp.DepartmentId + @"'
+                ;";
+
+            
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -105,10 +110,9 @@ namespace WebApplication1.Controllers
         [HttpDelete("{id}")]
         public JsonResult Delete(int id)
         {
-            string query = @"
-                delete from dbo.Employee 
-                where EmployeeId = " + id + @"
-                ";
+            string query = @"EXEC BorrarEmpleados
+                '" + id + @"'
+                ;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -127,10 +131,12 @@ namespace WebApplication1.Controllers
             return new JsonResult("Eliminado Exitosamente");
         }
 
-        /*[Route("GetAllDepartmentNames")]
-        public JsonResult GetAllDepartmentNames()
+        
+        [Route("GetAllDepartmentId")]
+        public JsonResult GetAllDepartmentId()
         {
-            string query = @"select DepartmentName from dbo.Department";
+            string query = @"EXEC ListarDepartamento
+                    ;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -149,13 +155,34 @@ namespace WebApplication1.Controllers
 
             return new JsonResult(table);
         }
-        */
-        [Route("GetAllDepartmentNames")]
-        public JsonResult GetAllDepartmentNames()
+
+        [Route("GetAllPositionNames")]
+        public JsonResult GetAllPositionNames()
         {
-            string query = @"
-                    select DepartmentName from dbo.Department
-                    ";
+            string query = @"EXEC ListarPuestos;";
+            DataTable table = new DataTable();
+            string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
+            SqlDataReader myReader;
+            using (SqlConnection myCon = new SqlConnection(sqlDataSource))
+            {
+                myCon.Open();
+                using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                {
+                    myReader = myCommand.ExecuteReader();
+                    table.Load(myReader); ;
+
+                    myReader.Close();
+                    myCon.Close();
+                }
+            }
+
+            return new JsonResult(table);
+        }
+
+        [Route("GetAllIdentificationDocumentTypeId")]
+        public JsonResult GetAllIdentificationDocumentTypeId()
+        {
+            string query = @"EXEC ListarTarjetas;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;

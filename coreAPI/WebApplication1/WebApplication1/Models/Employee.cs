@@ -12,7 +12,15 @@ namespace WebApplication1.Models
 
         public string EmployeeName { get; set; }
 
-        public string Department { get; set; }
+        public int IdentificationDocTypeId { get; set; }
+
+        public int IdentificationDocValue { get; set; }
+
+        public int DepartmentId { get; set; }
+
+        public int PositionName { get; set; }
+
+        public string DateOfBirth { get; set; }
 
     }
 }

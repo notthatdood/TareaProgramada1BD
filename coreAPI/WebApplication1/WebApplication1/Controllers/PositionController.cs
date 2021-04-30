@@ -13,11 +13,11 @@ namespace WebApplication1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DepartmentController : ControllerBase
+    public class PositionController : ControllerBase
     {
         private readonly IConfiguration _configuration;
 
-        public DepartmentController(IConfiguration configuration)
+        public PositionController(IConfiguration configuration)
         {
             _configuration = configuration;
         }
@@ -25,8 +25,7 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public JsonResult Get()
         {
-            string query = @"
-                    select Id, Nombre from dbo.Departamento";
+            string query = @"Exec ListarPuestos;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -48,12 +47,13 @@ namespace WebApplication1.Controllers
 
 
         [HttpPost]
-        public JsonResult Post(Department dep)
+        public JsonResult Post(Position pos)
         {
-            string query = @"
-                    insert into dbo.Departamento values 
-                    ('" + dep.DepartmentName + @"')
-                    ";
+            string query = @"EXEC InsertarPuestos
+                '" + pos.PositionId + @"'
+                ,'" + pos.PositionName + @"'
+                ,'" + pos.HourlyWage + @"'
+                ;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -75,13 +75,13 @@ namespace WebApplication1.Controllers
 
 
         [HttpPut]
-        public JsonResult Put(Department dep)
+        public JsonResult Put(Position pos)
         {
-            string query = @"
-                    update dbo.Departamento set 
-                    Nombre = '" + dep.DepartmentName + @"'
-                    where Id = " + dep.DepartmentId + @" 
-                    ";
+            string query = @"EXEC EditarPuestos
+                '" + pos.PositionId + @"'
+                ,'" + pos.PositionName + @"'
+                ,'" + pos.HourlyWage + @"'
+                ;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
@@ -103,12 +103,11 @@ namespace WebApplication1.Controllers
 
 
         [HttpDelete("{id}")]
-        public JsonResult Delete(int id)
+        public JsonResult Delete(string id)
         {
-            string query = @"
-                    delete from dbo.Departamento
-                    where Id = " + id + @" 
-                    ";
+            string query = @"EXEC BorrarPuestos
+                '" + id + @"'
+                ;";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
