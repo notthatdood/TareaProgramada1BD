@@ -1,16 +1,25 @@
-Create procedure BorrarEmpleados
-	@Id int
+CREATE PROCEDURE BorrarEmpleados
+	@InEmpleadoId INT,
+	@OutResultCode INT OUTPUT
 
-	as
-	Begin
-		set nocount on;
-		Begin try
-			Update Empleado
-			Set Activo='0'
-			Where Id=@Id
-		End try
-		Begin catch
-			Insert into DBErrores values (
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SELECT
+				@OutResultCode=0;
+			IF NOT EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId)
+			OR EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId AND Activo='0')
+				BEGIN
+					Set @OutResultCode=50001; --El empleado no existe
+					RETURN
+				END;
+			UPDATE Empleado
+			SET Activo='0'
+			WHERE Id=@InEmpleadoId
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
 			SUSER_SNAME(),
 			ERROR_NUMBER(),
 			ERROR_STATE(),
@@ -20,8 +29,12 @@ Create procedure BorrarEmpleados
 			ERROR_MESSAGE(),
 			GETDATE()
 			)
-		End catch
 
-		set nocount off;
-	End
-GO
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+
+--DECLARE @ResultCode INT
+--EXECUTE BorrarEmpleados 'Id', @ResultCode
+--SELECT @ResultCode

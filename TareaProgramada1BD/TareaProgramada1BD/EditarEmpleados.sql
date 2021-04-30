@@ -1,24 +1,34 @@
-Create procedure EditarEmpleados
-	@Id int,
-	@Nombre varchar(50),
-	@IdTipoIdentificacion int,
-	@ValorDocumentoIdentificacion int,
-	@FechaNacimiento date,
-	@Puesto varchar(40),
-	@IdDepartamento int
+CREATE PROCEDURE EditarEmpleados
+	@InEmpleadoId INT,
+	@InEmpleadoNombre VARCHAR(50),
+	@InEmpleadoIdTipoIdentificacion INT,
+	@InEmpleadoValorDocumentoIdentificacion INT,
+	@InEmpleadoFechaNacimiento DATE,
+	@InEmpleadoIdPuesto INT,
+	@InEmpleadoIdDepartamento INT,
+	@OutResultCode INT OUTPUT
 
-	as
-	Begin
-		set nocount on;
-		Begin try
-			Update Empleado
-			Set Nombre=@Nombre, IdTipoIdentificacion=@IdTipoIdentificacion,
-			ValorDocumentoIdentificacion=@ValorDocumentoIdentificacion, FechaNacimiento=@FechaNacimiento,
-			Puesto=@Puesto, IdDepartamento=@IdDepartamento
-			Where Id=@Id and Activo='1'
-		End try
-		Begin catch
-			Insert into DBErrores values (
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SELECT
+				@OutResultCode=0;
+			IF NOT EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId)
+			OR EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId AND Activo='0')
+				BEGIN
+					Set @OutResultCode=50001; --El empleado no existe
+					RETURN
+				END;
+			UPDATE Empleado
+			SET Nombre=@InEmpleadoNombre, IdTipoIdentificacion=@InEmpleadoIdTipoIdentificacion,
+			ValorDocumentoIdentificacion=@InEmpleadoValorDocumentoIdentificacion,
+			FechaNacimiento=@InEmpleadoIdDepartamento,
+			IdPuesto=@InEmpleadoIdPuesto, IdDepartamento=@InEmpleadoIdDepartamento
+			WHERE Id=@InEmpleadoId and Activo='1'
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores values (
 			SUSER_SNAME(),
 			ERROR_NUMBER(),
 			ERROR_STATE(),
@@ -28,8 +38,13 @@ Create procedure EditarEmpleados
 			ERROR_MESSAGE(),
 			GETDATE()
 			)
-		End catch
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
 
-		set nocount off;
-	End
-GO
+--DECLARE @ResultCode INT
+--EXECUTE EditarEmpleados 'Id', 'Nombre', 'TipoIdentificacion',
+--'ValorDocIdentificacion', 'FechaNacimiento', 'IdPuesto', 'IdDepartamento', @ResultCode
+--SELECT @ResultCode

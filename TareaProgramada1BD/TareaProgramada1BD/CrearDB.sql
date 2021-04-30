@@ -22,10 +22,10 @@ Create table Empleado ( Id int IDENTITY(1,1) PRIMARY KEY,
 					    Nombre varchar(50),
 					    IdTipoIdentificacion int,
 						ValorDocumentoIdentificacion int, 
-						IdDepartamento int, Puesto int,
+						IdDepartamento int, IdPuesto int,
 						FechaNacimiento date, Activo bit,
 						FOREIGN KEY (IdTipoIdentificacion) REFERENCES TipoDocuIdentidad (Id),
-						FOREIGN KEY (Puesto) REFERENCES Puesto (Id),
+						FOREIGN KEY (IdPuesto) REFERENCES Puesto (Id),
 						FOREIGN KEY (IdDepartamento) REFERENCES Departamento (Id))
 GO
 

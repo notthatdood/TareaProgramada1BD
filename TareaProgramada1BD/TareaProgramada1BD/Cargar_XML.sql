@@ -56,7 +56,7 @@ A.EmpleadoXML.value('@Nombre','varchar(30)') as Nombre,
 A.EmpleadoXML.value('@idTipoDocumentacionIdentidad','int') as IdTipoIdentificacion,
 A.EmpleadoXML.value('@ValorDocumentoIdentidad','int') as ValorDocumentoIdentifacion,
 A.EmpleadoXML.value('@IdDepartamento','int') as IdDepartamento,
-A.EmpleadoXML.value('@idPuesto','int') as Puesto,
+A.EmpleadoXML.value('@idPuesto','int') as IdPuesto,
 A.EmpleadoXML.value('@FechaNacimiento','date') as FechaNacimiento,
 '1' as Activo
 From

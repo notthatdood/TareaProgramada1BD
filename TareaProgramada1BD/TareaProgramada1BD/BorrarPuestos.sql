@@ -1,16 +1,25 @@
-Create procedure BorrarPuestos
-	@Nombre varchar(40)
+CREATE PROCEDURE BorrarPuestos
+	@InPuestoId INT,
+	@OutResultCode INT OUTPUT
 
-	as
-	Begin
-		set nocount on;
-		Begin try
-			Update Puesto
-			Set Activo='0'
-			Where Nombre=@Nombre
-		End try
-		Begin catch
-			Insert into DBErrores values (
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SELECT
+				@OutResultCode=0;
+			IF NOT EXISTS(SELECT 1 FROM Puesto C WHERE C.Id=@InPuestoId)
+			OR EXISTS(SELECT 1 FROM Puesto C WHERE C.Id=@InPuestoId AND Activo='0')
+				BEGIN
+					Set @OutResultCode=50001; --El puesto no existe
+					RETURN
+				END;
+			UPDATE Puesto
+			SET Activo='0'
+			WHERE Id=@InPuestoId
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
 			SUSER_SNAME(),
 			ERROR_NUMBER(),
 			ERROR_STATE(),
@@ -20,8 +29,12 @@ Create procedure BorrarPuestos
 			ERROR_MESSAGE(),
 			GETDATE()
 			)
-		End catch
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
 
-		set nocount off;
-	End
-GO
+--DECLARE @ResultCode INT
+--EXECUTE BorrarPuestos 'Id', @ResultCode
+--SELECT @ResultCode
