@@ -87,14 +87,23 @@ Create table PlanillaSemanal ( Id int IDENTITY(1,1) PRIMARY KEY,
 						FOREIGN KEY (IdMes) REFERENCES PlanillaMensual (Id))
 GO
 
+Create table Jornada ( Id int IDENTITY(1,1) PRIMARY KEY,
+						IdEmpleado int,
+						TipoJornada int,
+						IdSemana int,
+						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),
+						FOREIGN KEY (TipoJornada) REFERENCES TiposDeJornada (Id),
+						FOREIGN KEY (IdSemana) REFERENCES PlanillaSemanal (Id))
+GO
+
 Create table PlanillaSemanalXEmpleado ( IdSemana int primary key,
 						IdEmpleado int,
 						SalarioNeto int,
-						TipoJornada int,
 						FOREIGN KEY (IdSemana) REFERENCES PlanillaSemanal (Id),
-						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),
-						FOREIGN KEY (TipoJornada) REFERENCES TiposDeJornada (Id))
+						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),)
 GO
+
+
 
 Create table PlanillaMensualXEmpleado ( IdMes int primary key,
 						IdEmpleado int,
@@ -113,33 +122,52 @@ Create table MovimientoPlanilla ( Id int IDENTITY(1,1) PRIMARY KEY,
 						FOREIGN KEY (TipoMovimiento) REFERENCES TipoMovimiento (Id))
 GO
 
+Create table MarcaAsistencia ( Id int IDENTITY(1,1) PRIMARY KEY,
+						IdJornada int,
+						FechaEntrada datetime,
+						FechaSalida datetime,
+						FOREIGN KEY (IdJornada) REFERENCES Jornada (Id))
+GO
+
 Create table MovimientoHoras ( Id int primary key,
-						FOREIGN KEY (Id) REFERENCES MovimientoPlanilla (Id))
+						IdMarcaAsistencia int,
+						FOREIGN KEY (Id) REFERENCES MovimientoPlanilla (Id),
+						FOREIGN KEY (IdMarcaAsistencia) REFERENCES MarcaAsistencia (Id))
+GO
+
+Create table DeduccionXEmpleado ( Id int primary key,
+						IdEmpleado int,
+						IdTipoDeduccion int,
+						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),
+						FOREIGN KEY (IdTipoDeduccion) REFERENCES TipoDeduccion (Id))
 GO
 
 Create table MovimientoDeduccion ( Id int primary key,
-						FOREIGN KEY (Id) REFERENCES MovimientoPlanilla (Id))
+						IdDeduccionXEmpleado int,
+						FOREIGN KEY (Id) REFERENCES MovimientoPlanilla (Id),
+						FOREIGN KEY (IdDeduccionXEmpleado) REFERENCES DeduccionXEmpleado (Id))
 GO
 
-Create table MarcaAsistencia ( IdEmpleado int,
-						ValorDocIdentidad int,
-						FechaEntrada datetime,
-						FechaSalida datetime,
-						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id))
+Create table FijaNoObligatoria ( IdDeduccionXEmpleado int,
+						Monto int,
+						FOREIGN KEY (IdDeduccionXEmpleado) REFERENCES DeduccionXEmpleado (Id))
 GO
 
-Create table DeduccionXEmpleado ( IdEmpleado int,
-						ValorDocIdentidad int,
-						Nombre varchar(50),
-					    Obligatorio bit,
-						Porcentual bit,
-						Valor decimal(3,3)
-						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id))
+Create table PorcentualNoObligatoria ( IdDeduccionXEmpleado int,
+						Porcentaje decimal(3,3),
+						FOREIGN KEY (IdDeduccionXEmpleado) REFERENCES DeduccionXEmpleado (Id))
+GO
+
+Create table PorcentualSiObligatoria ( IdTipoDeduccion int,
+						Porcentaje decimal(3,3),
+						FOREIGN KEY (IdTipoDeduccion) REFERENCES TipoDeduccion (Id))
 GO
 
 Create table DeduccionXEmpleadoXMes ( Id int primary key,
 						IdEmpleado int,
 						TotalDeducciones int,
+						IdTipoDeduccion int,
+						FOREIGN KEY (IdTipoDeduccion) REFERENCES TipoDeduccion (Id),
 						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),
-						FOREIGN KEY (Id) REFERENCES PlanillaMensual (Id))
+						FOREIGN KEY (Id) REFERENCES PlanillaMensualXEmpleado (IdMes))
 GO
