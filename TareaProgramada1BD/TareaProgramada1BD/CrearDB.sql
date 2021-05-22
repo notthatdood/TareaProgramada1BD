@@ -135,7 +135,7 @@ Create table MovimientoHoras ( Id int primary key,
 						FOREIGN KEY (IdMarcaAsistencia) REFERENCES MarcaAsistencia (Id))
 GO
 
-Create table DeduccionXEmpleado ( Id int primary key,
+Create table DeduccionXEmpleado ( Id int IDENTITY(1,1) primary key,
 						IdEmpleado int,
 						IdTipoDeduccion int,
 						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),
@@ -163,7 +163,7 @@ Create table PorcentualSiObligatoria ( IdTipoDeduccion int,
 						FOREIGN KEY (IdTipoDeduccion) REFERENCES TipoDeduccion (Id))
 GO
 
-Create table DeduccionXEmpleadoXMes ( Id int primary key,
+Create table DeduccionXEmpleadoXMes ( Id int IDENTITY(1,1) primary key,
 						IdEmpleado int,
 						TotalDeducciones int,
 						IdTipoDeduccion int,

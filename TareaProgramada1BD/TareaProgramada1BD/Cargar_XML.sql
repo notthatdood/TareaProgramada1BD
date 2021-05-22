@@ -108,6 +108,9 @@ Openrowset(Bulk 'C:\Datos_Tarea2.xml', Single_Blob) T(CatalogoXML)
 ) as S(CatalogoXML)
 
 Cross apply CatalogoXML.nodes('Datos/Catalogos/Deducciones/TipoDeDeduccion') as A(CatalogoXML)
+
+INSERT INTO PorcentualSiObligatoria SELECT TD.Id, TD.Valor
+FROM TipoDeduccion TD WHERE TD.Obligatorio=1;
 GO
 
 /*Create procedure insertarEmpleado as

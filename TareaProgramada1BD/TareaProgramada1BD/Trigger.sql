@@ -8,8 +8,7 @@ AFTER INSERT
 	BEGIN
 		SET NOCOUNT ON;
 		BEGIN TRY
-			INSERT INTO DeduccionXEmpleado SELECT E.Id, E.ValorDocumentoIdentificacion, TD.Nombre, TD.Obligatorio,
-			TD.Porcentual, TD.Valor
+			INSERT INTO DeduccionXEmpleado SELECT E.Id, TD.Id
 			FROM Empleado E, TipoDeduccion TD WHERE TD.Obligatorio='1' AND E.Id=@IdEmpleado;
 		END TRY
 		BEGIN CATCH
