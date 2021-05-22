@@ -1,4 +1,3 @@
---https://www.youtube.com/watch?v=jLk4BtAKZUM
 USE TareaProgramada;
 GO
 
@@ -8,7 +7,8 @@ FOR INSERT
 	BEGIN
 		SET NOCOUNT ON;
 		BEGIN TRY
-			INSERT INTO DeduccionXEmpleado SELECT E.Id, E.ValorDocumentoIdentificacion, TD.*
+			INSERT INTO DeduccionXEmpleado SELECT E.Id, E.ValorDocumentoIdentificacion, TD.Nombre, TD.Obligatorio,
+			TD.Porcentual, TD.Valor
 			FROM Empleado E, TipoDeduccion TD WHERE TD.Obligatorio='1';
 		END TRY
 		BEGIN CATCH

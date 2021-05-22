@@ -1,6 +1,8 @@
 --SELECT EOMONTH( @mydate, -1 )
 --SELECT EOMONTH( '2021-02-04')
 --SELECT EOMONTH( @mydate, 1 )
+USE TareaProgramada
+GO
 
 CREATE PROCEDURE InsertarMes
 	@InFechaInicio DATE,
@@ -33,6 +35,45 @@ CREATE PROCEDURE InsertarMes
 			END
 			PRINT(@FechaFinal)
 			INSERT INTO PlanillaMensual VALUES (@InFechaInicio, @InFechaFinal);
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+
+CREATE PROCEDURE InsertarSemana
+	@InIdMes INT,
+	@InFechaInicio DATE,
+	@OutResultCode INT OUTPUT
+
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SELECT
+				@OutResultCode=0;
+			DECLARE
+				@InFechaFinal DATE,
+				@InFechaTemporal DATE,
+				@Bandera BIT;
+			SELECT
+				@InFechaFinal=DATEADD(DAY,7,@InFechaInicio),  @InFechaTemporal=EOMONTH(@InFechaFinal), @Bandera='0';
+				--@FechaFinal=DATEADD(DAY,7,'2021-02-04'), @FechaTemporal=EOMONTH(@FechaFinal), @Bandera='0';
+			PRINT(@FechaFinal)
+			INSERT INTO PlanillaSemanal VALUES (@InIdMes, @InFechaInicio, @InFechaFinal);
 		END TRY
 		BEGIN CATCH
 			INSERT INTO DBErrores VALUES (
