@@ -25,7 +25,7 @@ CREATE PROCEDURE InsertarMes
 			--PRINT(@FechaFinal)
 				IF(@InFechaFinal>@InFechaTemporal) BEGIN
 					SELECT
-						@InFechaFinal=DATEADD(DAY,-8,@InFechaFinal),
+						@InFechaFinal=DATEADD(DAY,-1,@InFechaFinal),
 						@Bandera='1';
 				END
 				IF(@Bandera='0') BEGIN
@@ -53,6 +53,11 @@ CREATE PROCEDURE InsertarMes
 		SET NOCOUNT OFF;
 	END
 GO
+
+/*DECLARE @ResultCode INT
+EXECUTE InsertarMes '2021-02-05', @ResultCode OUTPUT
+SELECT @ResultCode
+SELECT * FROM PlanillaMensual*/
 
 CREATE PROCEDURE InsertarSemana
 	@InIdMes INT,
@@ -135,11 +140,6 @@ GO
 --EXECUTE InsertarEmpleado 'Nombre', 'TipoIdentificacion',
 --'ValorDocIdentificacion', 'FechaNacimiento', 'IdPuesto', 'IdDepartamento', @ResultCode OUTPUT
 --SELECT @ResultCode
-
-/*DECLARE @ResultCode INT
-EXECUTE InsertarMes '2021-02-04', @ResultCode OUTPUT
-SELECT @ResultCode
-SELECT * FROM PlanillaMensual*/
 
 /*CREATE PROCEDURE name
 	@InPuestoId INT,

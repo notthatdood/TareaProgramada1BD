@@ -61,12 +61,6 @@
           <AssociatedConnUserName />
           <FullPath>EditarPuestos.sql</FullPath>
         </FileNode>
-        <FileNode Name="InsertarEmpleados.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
-          <AssociatedConnUserName />
-          <FullPath>InsertarEmpleados.sql</FullPath>
-        </FileNode>
         <FileNode Name="InsertarPuestos.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
@@ -92,10 +86,16 @@
           <FullPath>ListarPuestos.sql</FullPath>
         </FileNode>
         <FileNode Name="ListarTarjetas.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>ListarTarjetas.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Script_Simulacion.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Script_Simulacion.sql</FullPath>
         </FileNode>
         <FileNode Name="SP_Simulacion.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>

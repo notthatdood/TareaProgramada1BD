@@ -8,9 +8,18 @@ DECLARE @doc XML
 	FROM OPENROWSET(
 				BULK 'C:\Datos_Tarea2.xml', SINGLE_CLOB
 				) AS xmlData
-DECLARE @FechaActual DATE, @Nombre VARCHAR(50);
+DECLARE @FechaActual DATE, @CantDias INT, @OutResultCode INT;
 SET @FechaActual=@doc.value('(/Datos/Operacion/@Fecha)[1]','date')
---WHILE(1=1) BEGIN
+SET @CantDias=1;
+
+WHILE(@CantDias<=2) --92
+BEGIN
+	IF(DATEPART(dw, @FechaActual)=5)--Este IF revisa si se trata o no de un viernes
+	BEGIN
+		EXECUTE InsertarMes @FechaActual, @OutResultCode OUTPUT
+		SELECT @OutResultCode
+	END
+
 
 --Segmento encargado de insertar empleados nuevos
 		CREATE TABLE #TempEmpleados(Id INT IDENTITY(1,1) PRIMARY KEY, Nombre VARCHAR(50),
@@ -39,7 +48,7 @@ SET @FechaActual=@doc.value('(/Datos/Operacion/@Fecha)[1]','date')
 			@InEmpleadoNombre VARCHAR(50), @InEmpleadoIdTipoIdentificacion INT,
 			@InEmpleadoValorDocumentoIdentificacion INT, @InEmpleadoFechaNacimiento DATE,
 			@InEmpleadoIdPuesto INT, @InEmpleadoIdDepartamento INT, @InEmpleadoUsername VARCHAR(30),
-			@InEmpleadoPwd VARCHAR(30), @OutResultCode INT, @Cont INT, @LargoTabla INT;
+			@InEmpleadoPwd VARCHAR(30), @Cont INT, @LargoTabla INT;
 		SELECT @Cont=1, @LargoTabla=COUNT(*) FROM #TempEmpleados
 		WHILE(@Cont<=@LargoTabla)
 		BEGIN
@@ -67,4 +76,5 @@ SET @FechaActual=@doc.value('(/Datos/Operacion/@Fecha)[1]','date')
 
 	--Se incrementa el día para continuar leyendo el XML
 	SET @FechaActual=DATEADD(DAY,1,@FechaActual)
+	SET @CantDias=@CantDias+1;
 END;
