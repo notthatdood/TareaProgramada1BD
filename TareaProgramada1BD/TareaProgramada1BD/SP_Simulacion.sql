@@ -33,7 +33,7 @@ CREATE PROCEDURE InsertarMes
 						@InFechaFinal=DATEADD(DAY,7,@InFechaFinal);
 				END
 			END
-			PRINT(@FechaFinal)
+			--PRINT(@InFechaFinal)
 			INSERT INTO PlanillaMensual VALUES (@InFechaInicio, @InFechaFinal);
 		END TRY
 		BEGIN CATCH
@@ -72,7 +72,7 @@ CREATE PROCEDURE InsertarSemana
 			SELECT
 				@InFechaFinal=DATEADD(DAY,7,@InFechaInicio),  @InFechaTemporal=EOMONTH(@InFechaFinal), @Bandera='0';
 				--@FechaFinal=DATEADD(DAY,7,'2021-02-04'), @FechaTemporal=EOMONTH(@FechaFinal), @Bandera='0';
-			PRINT(@FechaFinal)
+			--PRINT(@InFechaFinal)
 			INSERT INTO PlanillaSemanal VALUES (@InIdMes, @InFechaInicio, @InFechaFinal);
 		END TRY
 		BEGIN CATCH
@@ -93,10 +93,53 @@ CREATE PROCEDURE InsertarSemana
 	END
 GO
 
-DECLARE @ResultCode INT
+CREATE PROCEDURE InsertarEmpleados
+	@InEmpleadoNombre VARCHAR(50),
+	@InEmpleadoIdTipoIdentificacion INT,
+	@InEmpleadoValorDocumentoIdentificacion INT,
+	@InEmpleadoFechaNacimiento DATE,
+	@InEmpleadoIdPuesto INT,
+	@InEmpleadoIdDepartamento INT,
+	@InEmpleadoUsername VARCHAR(30),
+	@InEmpleadoPwd VARCHAR(30),
+	@OutResultCode INT OUTPUT
+	
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SET @OutResultCode=0;
+			INSERT INTO Empleado
+			VALUES(@InEmpleadoNombre, @InEmpleadoIdTipoIdentificacion, @InEmpleadoValorDocumentoIdentificacion,
+			@InEmpleadoIdDepartamento, @InEmpleadoIdPuesto, @InEmpleadoFechaNacimiento, @InEmpleadoUsername,
+			@InEmpleadoPwd,'1')
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+--DECLARE @ResultCode INT
+--EXECUTE InsertarEmpleado 'Nombre', 'TipoIdentificacion',
+--'ValorDocIdentificacion', 'FechaNacimiento', 'IdPuesto', 'IdDepartamento', @ResultCode OUTPUT
+--SELECT @ResultCode
+
+/*DECLARE @ResultCode INT
 EXECUTE InsertarMes '2021-02-04', @ResultCode OUTPUT
 SELECT @ResultCode
-SELECT * FROM PlanillaMensual
+SELECT * FROM PlanillaMensual*/
 
 /*CREATE PROCEDURE name
 	@InPuestoId INT,
