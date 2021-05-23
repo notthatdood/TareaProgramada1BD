@@ -8,27 +8,38 @@ DECLARE @doc XML
 	FROM OPENROWSET(
 				BULK 'C:\Datos_Tarea2.xml', SINGLE_CLOB
 				) AS xmlData
-DECLARE @FechaActual DATE, @CantDias INT, @OutResultCode INT;
+DECLARE @FechaActual DATE, @CantDias INT, @OutResultCode INT, @IdSemanaActual INT;
 SET @FechaActual=@doc.value('(/Datos/Operacion/@Fecha)[1]','date')
 SET @CantDias=1;
-
+SET NOCOUNT ON;
 WHILE(@CantDias<=2) --92
 BEGIN
-	IF(DATEPART(dw, @FechaActual)=5)--Este IF revisa si se trata o no de un viernes
+
+
+
+	--Este IF revisa si se trata o no de un jueves-----------------------------------------------------
+	IF(DATEPART(dw, @FechaActual)=4)
 	BEGIN
-		EXECUTE InsertarMes @FechaActual, @OutResultCode OUTPUT
+		-----------------Crea nuevo mes en caso de iniciar el mes----------------------------------
+		IF(DATEDIFF(day, DATEADD(d,1,EOMONTH(@FechaActual,-1)), @FechaActual)<=7)BEGIN
+			EXECUTE InsertarMes @FechaActual, @OutResultCode OUTPUT
+			SELECT @OutResultCode
+		END;
+		DECLARE @IdMes INT;
+		SELECT @IdMes=PM.Id FROM PlanillaMensual PM
+		WHERE DATEDIFF(day, PM.FechaInicio, @FechaActual)>=0
+		AND DATEDIFF(day, PM.FechaFinal, @FechaActual)<0
+		EXECUTE InsertarSemana @IdMes, @FechaActual, @IdSemanaActual OUTPUT, @OutResultCode OUTPUT
 		SELECT @OutResultCode
-	END
 
 
---Segmento encargado de insertar empleados nuevos
+		-----------------Segmento encargado de insertar empleados nuevos----------------------------------
 		CREATE TABLE #TempEmpleados(Id INT IDENTITY(1,1) PRIMARY KEY, Nombre VARCHAR(50),
 					    IdTipoIdentificacion INT,
 						ValorDocumentoIdentificacion INT, 
 						IdDepartamento INT, IdPuesto INT,
 						FechaNacimiento DATE, Username VARCHAR(30),
 						Pwd VARCHAR(30))
-		SET NOCOUNT ON;
 		INSERT INTO #TempEmpleados
 		SELECT
 			NuevoEmpleado.value('@Nombre','varchar(50)') AS Nombre,
@@ -66,11 +77,57 @@ BEGIN
 			EXECUTE InsertarEmpleados @InEmpleadoNombre, @InEmpleadoIdTipoIdentificacion,
 				@InEmpleadoValorDocumentoIdentificacion, @InEmpleadoFechaNacimiento, @InEmpleadoIdPuesto,
 				@InEmpleadoIdDepartamento, @InEmpleadoUsername, @InEmpleadoPwd, @OutResultCode OUTPUT
-			--SELECT @OutResultCode;
+			SELECT @OutResultCode;
 			SET @Cont=@Cont+1;
 		END
 		DROP TABLE #TempEmpleados
-		SET NOCOUNT OFF;
+		
+
+
+
+		-----------------Segmento encargado de las jornadas----------------------------------
+		CREATE TABLE #TempJornada(Id INT IDENTITY(1,1) PRIMARY KEY,
+					    IdJornada INT,
+						ValorDocumentoIdentificacion INT)
+		INSERT INTO #TempJornada
+		SELECT
+			Jornada.value('@IdJornada','int') AS IdJornada,
+			Jornada.value('@ValorDocumentoIdentidad','int') AS ValorDocumentoIdentificacion
+		FROM 
+			@doc.nodes('/Datos') AS A(Datos)
+		CROSS APPLY A.Datos.nodes('./Operacion') AS B(Operacion)
+		CROSS APPLY B.Operacion.nodes('./TipoDeJornadaProximaSemana') AS C(Jornada)
+		WHERE Operacion.value('@Fecha', 'date')=@FechaActual
+		DECLARE
+			@InIdJornada INT,
+			@InJornadaValorDocumentoIdentificacion INT;
+		SELECT @Cont=1, @LargoTabla=COUNT(*) FROM #TempJornada
+		WHILE(@Cont<=@LargoTabla)
+		BEGIN
+			SELECT 
+				@InIdJornada=T.IdJornada,
+				@InJornadaValorDocumentoIdentificacion=T.ValorDocumentoIdentificacion
+			FROM #TempJornada T
+			WHERE T.Id=@Cont;
+			EXECUTE InsertarJornada @InIdJornada, @InJornadaValorDocumentoIdentificacion,
+			@IdSemanaActual, @OutResultCode OUTPUT
+			SELECT @OutResultCode;
+			SET @Cont=@Cont+1;
+		END
+		DROP TABLE #TempJornada
+	END
+
+
+
+	--Este IF revisa si se trata o no de un viernes
+	IF(DATEPART(dw, @FechaActual)=5)
+	BEGIN
+		--EXECUTE InsertarMes @FechaActual, @OutResultCode OUTPUT
+		SELECT @OutResultCode
+	END
+
+
+
 
 
 
@@ -78,3 +135,4 @@ BEGIN
 	SET @FechaActual=DATEADD(DAY,1,@FechaActual)
 	SET @CantDias=@CantDias+1;
 END;
+SET NOCOUNT OFF;
