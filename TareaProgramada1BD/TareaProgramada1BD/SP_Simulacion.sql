@@ -227,6 +227,7 @@ CREATE PROCEDURE MarcarAsistencia
 	@InFechaEntrada DATETIME,
 	@InFechaSalida DATETIME,
 	@InValorDocumentoIdentidad INT,
+	@OutId INT OUTPUT,
 	@OutResultCode INT OUTPUT
 
 	AS
@@ -240,7 +241,7 @@ CREATE PROCEDURE MarcarAsistencia
 			AND E.Id=J.IdEmpleado;
 			--PRINT(@IdJornada)
 			INSERT INTO MarcaAsistencia VALUES(@IdJornada, @InFechaEntrada, @InFechaSalida);
-			
+			SELECT TOP 1 @OutId=MA.Id FROM MarcaAsistencia MA ORDER BY MA.Id DESC;
 		END TRY
 		BEGIN CATCH
 			INSERT INTO DBErrores VALUES (
@@ -457,9 +458,9 @@ SELECT @ResultCode*/
 EXECUTE AsociarEmpleadoConFijaNoObligatoria'2', '10000','15442171', @ResultCode OUTPUT
 SELECT @ResultCode*/
 
-DECLARE @ResultCode INT
+/*DECLARE @ResultCode INT
 EXECUTE InsertarMesXEmpleado '2', @ResultCode OUTPUT
-SELECT @ResultCode
+SELECT @ResultCode*/
 
 CREATE PROCEDURE InsertarMesXEmpleado
 	@InIdMesActual INT,
@@ -474,6 +475,174 @@ CREATE PROCEDURE InsertarMesXEmpleado
 		FROM PlanillaMensual PM, Empleado E WHERE PM.Id=@InIdMesActual;
 		END TRY
 		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+
+/*DECLARE @ResultCode INT
+EXECUTE InsertarSemanaXEmpleado '23', @ResultCode OUTPUT
+SELECT @ResultCode
+GO*/
+
+CREATE PROCEDURE InsertarSemanaXEmpleado
+	@InIdSemanaActual INT,
+	@OutResultCode INT OUTPUT
+
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SET @OutResultCode=0;
+		INSERT INTO PlanillaSemanalXEmpleado SELECT @InIdSemanaActual, E.Id, 0
+		FROM PlanillaSemanal PS, Empleado E WHERE PS.Id=@InIdSemanaActual;
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+
+CREATE PROCEDURE CrearMovimientoCreditoDia
+	@InFechaActual DATE,
+	@InIdSemana INT,
+	@InFechaEntrada DATETIME,
+	@InFechaSalida DATETIME,
+	@InValorDocumentoIdentificacion INT,
+	@InIdMarcaAsistencia INT,
+	@OutResultCode INT OUTPUT
+
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SET @OutResultCode=0;
+		DECLARE @IdSemanaXEmpleado INT, @Monto INT, @HorasLaboradas INT,
+		@HorasEsperadas INT, @EsFeriado BIT, @IdMovimiento INT;
+		--
+		/*DECLARE @InFechaEntrada DATETIME, @InFechaSalida DATETIME, @InValorDocumentoIdentificacion INT,
+		@InIdSemana INT;
+		SELECT @InFechaEntrada='2021-02-07 04:09 PM', @InFechaSalida='2021-02-07 11:34 PM',
+		@InValorDocumentoIdentificacion='71731275', @InIdSemana='23';*/
+		--
+		SELECT
+			@HorasLaboradas=DATEDIFF(hh,@InFechaEntrada,@InFechaSalida);
+		SELECT
+			@HorasEsperadas=DATEDIFF(hh,TDJ.HoraEntrada,TDJ.HoraSalida)
+		FROM
+			TiposDeJornada TDJ, Jornada J, Empleado E
+		WHERE
+			TDJ.Id=J.TipoJornada AND J.IdEmpleado=E.Id AND
+			E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion AND J.IdSemana=@InIdSemana;
+		SELECT
+			@IdSemanaXEmpleado=PSXM.Id
+		FROM
+			PlanillaSemanalXEmpleado PSXM, Empleado E
+		WHERE
+			PSXM.IdSemana=@InIdSemana AND PSXM.IdEmpleado=E.Id AND E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
+		--PRINT(@IdSemanaXEmpleado)
+		SELECT
+			@Monto=P.SalarioXHora
+		FROM
+			Puesto P, Empleado E
+		WHERE
+			P.Id=E.IdPuesto AND E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
+		
+		IF EXISTS(SELECT * FROM Feriados F WHERE @InFechaActual=F.Fecha)
+		BEGIN
+			SET @EsFeriado=1;
+		END
+		ELSE IF(DATEPART(dw, @InFechaActual)=7)
+		BEGIN
+			SET @EsFeriado=1;
+		END
+		ELSE
+		BEGIN
+			SET @EsFeriado=0;
+		END
+
+		BEGIN TRANSACTION Movimiento;
+		IF(@HorasLaboradas<=@HorasEsperadas)
+		BEGIN
+			INSERT INTO MovimientoPlanilla VALUES(@InFechaActual,@Monto*@HorasLaboradas,
+			@IdSemanaXEmpleado,'1');
+			SELECT TOP 1
+				@IdMovimiento=MP.Id
+			FROM
+				MovimientoPlanilla MP
+			ORDER BY MP.Id DESC;
+			INSERT INTO MovimientoHoras VALUES(@IdMovimiento, @InIdMarcaAsistencia)
+		END
+		ELSE
+		BEGIN
+			INSERT INTO MovimientoPlanilla VALUES(@InFechaActual,@Monto*@HorasEsperadas,
+			@IdSemanaXEmpleado,'1');
+			SELECT TOP 1
+				@IdMovimiento=MP.Id
+			FROM
+				MovimientoPlanilla MP
+			ORDER BY MP.Id DESC;
+			INSERT INTO MovimientoHoras VALUES(@IdMovimiento, @InIdMarcaAsistencia);
+
+			SET @HorasLaboradas=@HorasLaboradas-@HorasEsperadas;
+			IF(@EsFeriado=0)
+			BEGIN
+				INSERT INTO MovimientoPlanilla VALUES(@InFechaActual,@Monto*@HorasLaboradas*1.5,
+				@IdSemanaXEmpleado,'2');
+				SELECT TOP 1
+					@IdMovimiento=MP.Id
+				FROM
+					MovimientoPlanilla MP
+				ORDER BY MP.Id DESC;
+				INSERT INTO MovimientoHoras VALUES(@IdMovimiento, @InIdMarcaAsistencia)
+			END
+			ELSE
+			BEGIN
+				INSERT INTO MovimientoPlanilla VALUES(@InFechaActual,@Monto*@HorasLaboradas*2,
+				@IdSemanaXEmpleado,'3');
+				SELECT TOP 1
+					@IdMovimiento=MP.Id
+				FROM
+					MovimientoPlanilla MP
+				ORDER BY MP.Id DESC;
+				INSERT INTO MovimientoHoras VALUES(@IdMovimiento, @InIdMarcaAsistencia)
+			END
+		END
+		--Monto*Horas
+
+
+		COMMIT TRANSACTION Movimiento;
+		--PRINT(@HorasLaboradas)
+		--PRINT(@HorasEsperadas)
+
+		END TRY
+		BEGIN CATCH
+			IF @@Trancount>0 
+				ROLLBACK TRANSACTION Movimiento;
 			INSERT INTO DBErrores VALUES (
 			SUSER_SNAME(),
 			ERROR_NUMBER(),

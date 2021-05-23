@@ -2,7 +2,7 @@
 Use TareaProgramada;
 DECLARE @i int;
 SET @i=0;
-WHILE(@i<4)
+WHILE(@i<5)
 BEGIN
 	Drop table DBErrores;
 	Drop table DeduccionXEmpleado;

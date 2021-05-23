@@ -15,6 +15,21 @@ SET @IdMesActual=0;
 SET NOCOUNT ON;
 WHILE(@CantDias<=60) --92
 BEGIN
+
+	
+	--Este IF revisa si se trata o no de un viernes
+	IF(DATEPART(dw, @FechaActual)=5)
+	BEGIN
+		---------------------Este segmento crea las PlanillaXEmpleado y genera los movimientos---------------
+		IF(DATEDIFF(day, DATEADD(d,1,EOMONTH(@FechaActual,-1)), @FechaActual)<=7)
+		BEGIN
+			EXECUTE InsertarMesXEmpleado @IdMesActual, @OutResultCode OUTPUT
+			--SELECT @OutResultCode
+		END;
+		EXECUTE InsertarSemanaXEmpleado @IdSemanaActual, @OutResultCode OUTPUT
+	END
+
+
 	-----------------Segmento encargado de marcar la asistencia----------------------------------
 	CREATE TABLE #TempAsistencia(Id INT IDENTITY(1,1) PRIMARY KEY,
 				    FechaEntrada DATETIME,
@@ -33,7 +48,7 @@ BEGIN
 	DECLARE
 		@Cont INT, @LargoTabla INT,
 		@InFechaEntrada DATETIME, @InFechaSalida DATETIME,
-		@InMarcaValorDocumentoIdentificacion INT;
+		@InMarcaValorDocumentoIdentificacion INT, @IdMarcaAsistencia INT;
 	SELECT @Cont=1, @LargoTabla=COUNT(*) FROM #TempAsistencia
 	WHILE(@Cont<=@LargoTabla)
 	BEGIN
@@ -43,11 +58,14 @@ BEGIN
 		FROM #TempAsistencia T
 		WHERE T.Id=@Cont;
 		EXECUTE MarcarAsistencia @InFechaEntrada, @InFechaSalida,
-		@InMarcaValorDocumentoIdentificacion, @OutResultCode OUTPUT
+		@InMarcaValorDocumentoIdentificacion, @IdMarcaAsistencia OUTPUT, @OutResultCode OUTPUT
 		--SELECT @OutResultCode;
+		EXECUTE CrearMovimientoCreditoDia @FechaActual, @IdSemanaActual, @InFechaEntrada, @InFechaSalida,
+		@InMarcaValorDocumentoIdentificacion, @IdMarcaAsistencia, @OutResultCode OUTPUT;
 		SET @Cont=@Cont+1;
 	END
 	DROP TABLE #TempAsistencia
+	
 
 
 	-----------------Segmento encargado de eliminar empleados----------------------------------
@@ -82,17 +100,17 @@ BEGIN
 	IF(DATEPART(dw, @FechaActual)=4)
 	BEGIN
 		---------------------Este segmento crea las PlanillaXEmpleado y genera los movimientos---------------
-		IF(@IdMesActual>0)
+		/*IF(@IdMesActual>0)
 		BEGIN
 			IF(DATEDIFF(day, DATEADD(d,1,EOMONTH(@FechaActual,-1)), @FechaActual)<=7)
 			BEGIN
 				EXECUTE InsertarMesXEmpleado @IdMesActual, @OutResultCode OUTPUT
 				--SELECT @OutResultCode
 			END;
-		END
+		END*/
 
 
-		-----------------Crea nuevo mes en caso de iniciar el mes----------------------------------
+----------------------------Crea nuevo mes en caso de iniciar el mes----------------------------------
 		IF(DATEDIFF(day, DATEADD(d,1,EOMONTH(@FechaActual,-1)), @FechaActual)<=7)
 		BEGIN
 			EXECUTE InsertarMes @FechaActual, @IdMesActual OUTPUT, @OutResultCode OUTPUT
@@ -184,15 +202,6 @@ BEGIN
 			SET @Cont=@Cont+1;
 		END
 		DROP TABLE #TempJornada
-	END
-
-
-
-	--Este IF revisa si se trata o no de un viernes
-	IF(DATEPART(dw, @FechaActual)=5)
-	BEGIN
-		--EXECUTE InsertarMes @FechaActual, @OutResultCode OUTPUT
-		SELECT @OutResultCode
 	END
 
 
