@@ -276,6 +276,46 @@ CREATE PROCEDURE AsociarEmpleadoConFijaNoObligatoria
 			SELECT TOP 1 @IdDeduccionXEmpleado=DXE.Id FROM DeduccionXEmpleado DXE ORDER BY DXE.Id DESC;
 			INSERT INTO FijaNoObligatoria VALUES(@IdDeduccionXEmpleado, @InMonto);
 			COMMIT TRANSACTION AsociarDeduccion;
+		END TRY 
+		BEGIN CATCH
+			IF @@Trancount>0 
+				ROLLBACK TRANSACTION AsociarDeduccion;
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+
+CREATE PROCEDURE AsociarEmpleadoConPorcentualNoObligatoria
+	@InIdDeduccion INT,
+	@InValorDocumentoIdentificacion INT,
+	@OutResultCode INT OUTPUT
+
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SET @OutResultCode=0;
+			DECLARE @IdDeduccionXEmpleado INT, @Monto DECIMAL(3,3);
+			BEGIN TRANSACTION AsociarDeduccion
+			INSERT INTO DeduccionXEmpleado SELECT E.Id, TD.Id
+			FROM Empleado E, TipoDeduccion TD WHERE TD.Id=@InIdDeduccion AND
+			E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
+			SELECT TOP 1 @IdDeduccionXEmpleado=DXE.Id FROM DeduccionXEmpleado DXE ORDER BY DXE.Id DESC;
+			SELECT @Monto=TD.Valor FROM TipoDeduccion TD WHERE TD.Id=@InIdDeduccion;
+			INSERT INTO PorcentualNoObligatoria VALUES(@IdDeduccionXEmpleado, @Monto);
+			COMMIT TRANSACTION AsociarDeduccion;
 		END TRY
 		BEGIN CATCH
 			IF @@Trancount>0 
@@ -296,6 +336,114 @@ CREATE PROCEDURE AsociarEmpleadoConFijaNoObligatoria
 		SET NOCOUNT OFF;
 	END
 GO
+
+/*DECLARE @ResultCode INT
+EXECUTE AsociarEmpleadoConFijaNoObligatoria'2', '10000','15442171', @ResultCode OUTPUT
+SELECT @ResultCode*/
+
+CREATE PROCEDURE DesasociarEmpleadoConDeduccion
+	@InIdDeduccion INT,
+	@InValorDocumentoIdentificacion INT,
+	@OutResultCode INT OUTPUT
+	
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SET @OutResultCode=0;
+			DECLARE @EsPorcentual BIT, @IdDeduccionXEmpleado INT;
+			SELECT @EsPorcentual=TD.Porcentual FROM TipoDeduccion TD WHERE TD.Id=@InIdDeduccion;
+			BEGIN TRANSACTION DesasociarDeduccion
+			IF(@EsPorcentual=1)
+			BEGIN
+				SELECT @IdDeduccionXEmpleado=DXE.Id FROM PorcentualNoObligatoria PNO,
+				DeduccionXEmpleado DXE, Empleado E
+				WHERE PNO.IdDeduccionXEmpleado=DXE.Id AND
+					DXE.IdEmpleado=E.Id AND
+					E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
+				DELETE FROM PorcentualNoObligatoria
+				WHERE PorcentualNoObligatoria.IdDeduccionXEmpleado=@IdDeduccionXEmpleado;
+			END
+			ELSE
+			BEGIN
+				SELECT @IdDeduccionXEmpleado=DXE.Id FROM FijaNoObligatoria FNO,
+				DeduccionXEmpleado DXE, Empleado E
+				WHERE FNO.IdDeduccionXEmpleado=DXE.Id AND
+					DXE.IdEmpleado=E.Id AND
+					E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
+				DELETE FROM FijaNoObligatoria
+				WHERE FijaNoObligatoria.IdDeduccionXEmpleado=@IdDeduccionXEmpleado;
+			END
+			DELETE FROM DeduccionXEmpleado WHERE DeduccionXEmpleado.Id=@IdDeduccionXEmpleado;
+
+			COMMIT TRANSACTION DesasociarDeduccion;
+		END TRY
+		BEGIN CATCH
+			IF @@Trancount>0 
+				ROLLBACK TRANSACTION DesasociarDeduccion;
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
+		
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+
+CREATE PROCEDURE EliminarEmpleados
+	@InValorDocumentoIdentificacion INT,
+	@OutResultCode INT OUTPUT
+
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			SELECT
+				@OutResultCode=0;
+			IF NOT EXISTS(SELECT 1 FROM Empleado C WHERE C.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion)
+			OR EXISTS(SELECT 1 FROM Empleado C WHERE C.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion AND Activo='0')
+				BEGIN
+					SET @OutResultCode=50001; --El empleado no existe
+					RETURN
+				END;
+			UPDATE Empleado
+			SET Activo='0'
+			WHERE ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
+
+			SET @OutResultCode=50005;
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+
+DECLARE @ResultCode INT
+EXECUTE EliminarEmpleados '15442171', @ResultCode OUTPUT
+SELECT @ResultCode
+
+/*DECLARE @ResultCode INT
+EXECUTE DesasociarEmpleadoConDeduccion '4', '15442171', @ResultCode OUTPUT
+SELECT @ResultCode*/
+
 
 /*DECLARE @ResultCode INT
 EXECUTE AsociarEmpleadoConFijaNoObligatoria'2', '10000','15442171', @ResultCode OUTPUT
