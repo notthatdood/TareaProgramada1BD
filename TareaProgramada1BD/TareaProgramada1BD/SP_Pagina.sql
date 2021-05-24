@@ -146,21 +146,29 @@ CREATE PROCEDURE ListarSalarioSemana
 	BEGIN
 		SET NOCOUNT ON;
 		BEGIN TRY
-			SELECT DATEPART(dw, CONVERT(DATE, MA.FechaEntrada)) 'Dia de la semana',
-			CONVERT(TIME, MA.FechaEntrada) 'Fecha de entrada',
-			CONVERT(TIME, MA.FechaSalida) 'Fecha de salida',
-			DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida) 'Horas Ordinarias',
-			DATEDIFF(hh,MA.FechaEntrada, MA.FechaSalida)-DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida) 'Horas Extra'
-			,SUM(MP.Monto)
-			FROM PlanillaSemanalXEmpleado PSE, Jornada J, TiposDeJornada TJ, MarcaAsistencia MA,
-			MovimientoHoras MH, MovimientoPlanilla MP
-			WHERE PSE.Id=@InIdPlanillaXEmpleado AND J.IdSemana=PSE.IdSemana
-			AND J.IdEmpleado=PSE.IdEmpleado AND/**/ J.TipoJornada=TJ.Id AND MA.IdJornada=J.Id
-			AND MH.IdMarcaAsistencia=MA.Id AND MH.Id=MP.Id
-			GROUP BY DATEPART(dw, CONVERT(DATE, MA.FechaEntrada)), CONVERT(TIME, MA.FechaEntrada),
-			CONVERT(TIME, MA.FechaSalida),
-			DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida),
-			DATEDIFF(hh,MA.FechaEntrada, MA.FechaSalida)-DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida);
+			/*DECLARE @InIdPlanillaXEmpleado INT;
+			SET @InIdPlanillaXEmpleado=8;*/
+			SELECT
+				DATEPART(dw, CONVERT(DATE, MA.FechaEntrada)) 'DiaDeLaSemana',
+				CONVERT(TIME, MA.FechaEntrada) 'FechaDeEntrada',
+				CONVERT(TIME, MA.FechaSalida) 'FechaDeSalida',
+				DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida) 'HorasOrdinarias',
+				DATEDIFF(hh,MA.FechaEntrada, MA.FechaSalida)-DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida) 'HorasExtra',
+				/*SUM(MP.Monto)*/ MP.Monto 'TotalGanado', CASE TM.Id WHEN 3 THEN 1 ELSE 0 END 'EsDoble' 
+			FROM
+				PlanillaSemanalXEmpleado PSE, Jornada J, TiposDeJornada TJ, MarcaAsistencia MA,
+				MovimientoHoras MH, MovimientoPlanilla MP, TipoMovimiento TM
+			WHERE
+				PSE.Id=@InIdPlanillaXEmpleado AND J.IdSemana=PSE.IdSemana
+				AND J.IdEmpleado=PSE.IdEmpleado AND/**/ J.TipoJornada=TJ.Id AND MA.IdJornada=J.Id
+				AND MH.IdMarcaAsistencia=MA.Id AND MH.Id=MP.Id AND TM.Id=MP.TipoMovimiento --AND
+				--(TM.Id=2 OR TM.Id=3)
+			/*GROUP BY
+				DATEPART(dw, CONVERT(DATE, MA.FechaEntrada)), CONVERT(TIME, MA.FechaEntrada),
+				CONVERT(TIME, MA.FechaSalida),
+				DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida),
+				DATEDIFF(hh,MA.FechaEntrada, MA.FechaSalida)-DATEDIFF(hh,TJ.HoraEntrada, TJ.HoraSalida),
+				TM.Id*/
 			
 			
 		END TRY
@@ -180,7 +188,7 @@ CREATE PROCEDURE ListarSalarioSemana
 	END
 GO
 
---ListarSemana '6'
+--EXECUTE ListarSemana '6'
 
 ---Recibe el Id del empleado, y devuelve los campos solicitados además del ID de
 --PlanillaMensualXEmpleado, este no se muestra, solo se necesita para consultar en ListarDeduccionesMes
@@ -219,6 +227,40 @@ CREATE PROCEDURE ListarMes
 			GETDATE()
 			)
 		
+		END CATCH
+		SET NOCOUNT OFF;
+	END
+GO
+
+CREATE PROCEDURE ListarDeduccionesSemana
+	@InIdPlanillaXEmpleado INT
+
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+		BEGIN TRY
+			DECLARE @InIdPlanillaXEmpleado INT;
+			SET @InIdPlanillaXEmpleado=20;
+			SELECT
+				TD.Nombre, TD.Valor, TD.Porcentual, MP.Monto
+			FROM
+				TipoDeduccion TD, MovimientoPlanilla MP, MovimientoDeduccion MD, DeduccionXEmpleado DXE,
+				TipoMovimiento TM, TipoMovimientoDeduccion TMD
+			WHERE
+				MP.IdSemana=@InIdPlanillaXEmpleado AND MD.Id=MP.Id AND MD.IdDeduccionXEmpleado=DXE.Id
+				AND MP.TipoMovimiento=TM.Id AND TM.Id=TMD.IdMovimiento AND TMD.IdDeduccion=TD.Id
+		END TRY
+		BEGIN CATCH
+			INSERT INTO DBErrores VALUES (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE()
+			)
 		END CATCH
 		SET NOCOUNT OFF;
 	END
