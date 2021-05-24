@@ -27,55 +27,100 @@ CREATE PROCEDURE ListarUsuarios
 --EXECUTE ListarDepartamento
 GO
 
-/*
+
 CREATE PROCEDURE ListarSemana
-	@InIdEmpleado INT,
-	@OutResultCode INT OUTPUT
+	@InIdEmpleado INT
 
 	AS
 	BEGIN
 		SET NOCOUNT ON;
 		BEGIN TRY
-			DECLARE @TotalDeducciones INT, @TotalHorasNormales INT,
-			@TotalHorasExtraNormales INT, @TotalHorasExtraDobles INT;
-			SELECT
-				@TotalDeducciones=SUM(MP.Monto)
-			FROM
-				MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
-			WHERE
-				MP.IdSemana=PSXE.IdSemana AND PSXE.IdEmpleado=@InIdEmpleado AND
-				(MP.TipoMovimiento=4 OR MP.TipoMovimiento=5);
 
-			SELECT
-				@TotalHorasNormales=SUM(MP.Monto)
-			FROM
-				MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
-			WHERE
-				MP.IdSemana=PSXE.IdSemana AND PSXE.IdEmpleado=@InIdEmpleado AND
-				MP.TipoMovimiento=1;
+		--DECLARE @InIdEmpleado INT;
+		--SET @InIdEmpleado=7
 
-			SELECT
-				@TotalHorasExtraNormales=SUM(MP.Monto)
+			CREATE TABLE #Temp (Id INT PRIMARY KEY,
+				    TotalDeducciones INT, TotalHorasNormales INT,
+					TotalHorasExtraNormales INT, TotalHorasExtraDobles INT,)
+			INSERT INTO #Temp SELECT TOP 15 PS.Id AS Id, 0, 0, 0, 0
 			FROM
-				MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
-			WHERE
-				MP.IdSemana=PSXE.IdSemana AND PSXE.IdEmpleado=@InIdEmpleado AND
-				MP.TipoMovimiento=2;
+				PlanillaSemanal PS
+			ORDER BY
+				PS.Id DESC;
+			DECLARE
+				@Cont INT, @LargoTabla INT;
+			SELECT TOP 1  @Cont=T.Id FROM #Temp T ORDER BY T.Id ASC;
+			SELECT @LargoTabla=COUNT(*) FROM #Temp
+			WHILE(@Cont<=@LargoTabla)
+			BEGIN
+				DECLARE @TotalDeducciones INT, @TotalHorasNormales INT,
+				@TotalHorasExtraNormales INT, @TotalHorasExtraDobles INT;
+				SELECT
+					@TotalDeducciones=SUM(MP.Monto)
+				FROM
+					MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
+				WHERE
+					MP.IdSemana=PSXE.Id AND PSXE.IdEmpleado=@InIdEmpleado AND
+					(MP.TipoMovimiento=4 OR MP.TipoMovimiento=5) AND PSXE.IdSemana=@Cont;
+				IF(@TotalDeducciones IS NULL)
+				BEGIN
+					 SET @TotalDeducciones=0;
+				END
 
-			SELECT
-				@TotalHorasExtraDobles=SUM(MP.Monto)
-			FROM
-				MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
-			WHERE
-				MP.IdSemana=PSXE.IdSemana AND PSXE.IdEmpleado=@InIdEmpleado AND
-				MP.TipoMovimiento=3;
+				SELECT
+					@TotalHorasNormales=SUM(MP.Monto)
+				FROM
+					MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
+				WHERE
+					MP.IdSemana=PSXE.Id AND PSXE.IdEmpleado=@InIdEmpleado AND
+					MP.TipoMovimiento=1 AND PSXE.IdSemana=@Cont;
+				IF(@TotalHorasNormales IS NULL)
+				BEGIN
+					 SET @TotalHorasNormales=0;
+				END
 
-			SELECT TOP 15 PSM.Id, PSM.IdSemana, PSM.SalarioNeto, @TotalDeducciones, @TotalHorasNormales,
-			@TotalHorasExtraNormales, @TotalHorasExtraDobles
+				SELECT
+					@TotalHorasExtraNormales=SUM(MP.Monto)
+				FROM
+					MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
+				WHERE
+					MP.IdSemana=PSXE.Id AND PSXE.IdEmpleado=@InIdEmpleado AND
+					MP.TipoMovimiento=2 AND PSXE.IdSemana=@Cont;
+				IF(@TotalHorasExtraNormales IS NULL)
+				BEGIN
+					 SET @TotalHorasExtraNormales=0;
+				END
+
+				SELECT
+					@TotalHorasExtraDobles=SUM(MP.Monto)
+				FROM
+					MovimientoPlanilla MP, PlanillaSemanalXEmpleado PSXE
+				WHERE
+					MP.IdSemana=PSXE.Id AND PSXE.IdEmpleado=@InIdEmpleado AND
+					MP.TipoMovimiento=3 AND PSXE.IdSemana=@Cont;
+				IF(@TotalHorasExtraDobles IS NULL)
+				BEGIN
+					PRINT('aaaaa')
+					 SET @TotalHorasExtraDobles=0;
+				END
+
+				--SELECT @TotalDeducciones, @TotalHorasNormales, @TotalHorasExtraNormales, @TotalHorasExtraDobles;
+				--SELECT @Cont, @InIdEmpleado;
+				UPDATE #Temp SET TotalDeducciones=@TotalDeducciones, TotalHorasNormales=@TotalHorasNormales,
+				TotalHorasExtraNormales=@TotalHorasExtraNormales, TotalHorasExtraDobles=@TotalHorasExtraDobles
+				WHERE #Temp.Id=@Cont;
+				SET @Cont=@Cont+1;
+			END
+
+			SELECT TOP 15 PSM.Id, PSM.IdSemana, PSM.SalarioNeto,
+			T.TotalDeducciones AS Deducciones, T.TotalHorasNormales AS HorasNormales,
+			T.TotalHorasExtraNormales AS HorasExtraNormales, T.TotalHorasExtraDobles AS HorasExtraDobles,
+			(T.TotalHorasNormales+T.TotalHorasExtraNormales+T.TotalHorasExtraDobles) AS SalarioBruto
 			FROM
-				PlanillaSemanalXEmpleado PSM
+				PlanillaSemanalXEmpleado PSM, #Temp T
 			WHERE
-				PSM.IdEmpleado=@InIdEmpleado
+				PSM.IdEmpleado=@InIdEmpleado AND PSM.IdSemana=T.Id
+			DROP TABLE #Temp
 			
 		END TRY
 		BEGIN CATCH
@@ -92,7 +137,9 @@ CREATE PROCEDURE ListarSemana
 		END CATCH
 		SET NOCOUNT OFF;
 	END
-GO*/
+GO
+
+--ListarSemana '6'
 
 ---Recibe el Id del empleado, y devuelve los campos solicitados además del ID de
 --PlanillaMensualXEmpleado, este no se muestra, solo se necesita para consultar en ListarDeduccionesMes
@@ -113,7 +160,7 @@ CREATE PROCEDURE ListarMes
 			
 
 			SELECT TOP 12
-				PMXE.Id, PMXE.IdMes, PMXE.SalarioTotal, PMXE.SalarioNeto, @TotalDeducciones
+				PMXE.Id, PMXE.IdMes, PMXE.SalarioTotal, PMXE.SalarioNeto, @TotalDeducciones AS TotalDeducciones
 			FROM
 				PlanillaMensualXEmpleado PMXE, Empleado E
 			WHERE
