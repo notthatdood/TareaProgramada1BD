@@ -166,10 +166,9 @@ Create table PorcentualSiObligatoria ( IdTipoDeduccion int,
 GO
 
 Create table DeduccionXEmpleadoXMes ( Id int IDENTITY(1,1) primary key,
-						IdEmpleado int,
+						IdPlanillaMensualXEmpleado INT,
 						TotalDeducciones int,
 						IdTipoDeduccion int,
 						FOREIGN KEY (IdTipoDeduccion) REFERENCES TipoDeduccion (Id),
-						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),
-						FOREIGN KEY (Id) REFERENCES PlanillaMensualXEmpleado (Id))
+						FOREIGN KEY (IdPlanillaMensualXEmpleado) REFERENCES PlanillaMensualXEmpleado (Id))
 GO

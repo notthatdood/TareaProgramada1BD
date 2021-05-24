@@ -13,7 +13,7 @@ SET @FechaActual=@doc.value('(/Datos/Operacion/@Fecha)[1]','date')
 SET @CantDias=1;
 SET @IdMesActual=0;
 SET NOCOUNT ON;
-WHILE(@CantDias<=60) --92
+WHILE(@CantDias<=92) --92
 BEGIN
 
 	

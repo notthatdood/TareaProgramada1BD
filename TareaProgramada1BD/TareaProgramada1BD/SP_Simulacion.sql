@@ -285,7 +285,7 @@ CREATE PROCEDURE AsociarEmpleadoConFijaNoObligatoria
 			SELECT TOP 1 @IdDeduccionXEmpleado=DXE.Id FROM DeduccionXEmpleado DXE ORDER BY DXE.Id DESC;
 			INSERT INTO FijaNoObligatoria VALUES(@IdDeduccionXEmpleado, @InMonto);
 			COMMIT TRANSACTION AsociarDeduccion;
-		END TRY 
+		END TRY
 		BEGIN CATCH
 			IF @@Trancount>0 
 				ROLLBACK TRANSACTION AsociarDeduccion;
@@ -742,6 +742,17 @@ CREATE PROCEDURE CrearMovimientoDebito
 			UPDATE
 				PlanillaSemanalXEmpleado SET SalarioNeto=SalarioNeto-@Monto*@ValorP
 			WHERE PlanillaSemanalXEmpleado.Id=@InIdSemanaXEmpleado;
+			---
+			SELECT @IdMes=PM.Id
+			FROM PlanillaMensual PM, PlanillaSemanal PS, PlanillaSemanalXEmpleado PSX
+			WHERE PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@InIdSemanaXEmpleado;
+			SELECT @IdE=DXE.IdEmpleado FROM DeduccionXEmpleado DXE
+			WHERE DXE.Id=@InIdDeduccionXEmpleado;
+
+			INSERT INTO DeduccionXEmpleadoXMes SELECT PME.Id, @Monto*@ValorP, @TipoMovD
+			FROM PlanillaMensualXEmpleado PME
+			WHERE PME.IdMes=@IdMes AND PME.IdEmpleado=@IdE;
+			---
 		END
 		ELSE
 		BEGIN
@@ -761,6 +772,18 @@ CREATE PROCEDURE CrearMovimientoDebito
 			UPDATE
 				PlanillaSemanalXEmpleado SET SalarioNeto=SalarioNeto-@ValorF/@CantJueves
 			WHERE PlanillaSemanalXEmpleado.Id=@InIdSemanaXEmpleado;
+
+			---
+			SELECT @IdMes=PM.Id
+			FROM PlanillaMensual PM, PlanillaSemanal PS, PlanillaSemanalXEmpleado PSX
+			WHERE PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@InIdSemanaXEmpleado;
+			SELECT @IdE=DXE.IdEmpleado FROM DeduccionXEmpleado DXE
+			WHERE DXE.Id=@InIdDeduccionXEmpleado;
+
+			INSERT INTO DeduccionXEmpleadoXMes SELECT PME.Id, (@ValorF/@CantJueves), @TipoMovD
+			FROM PlanillaMensualXEmpleado PME
+			WHERE PME.IdMes=@IdMes AND PME.IdEmpleado=@IdE;
+			---
 		END
 
 		SELECT TOP 1
