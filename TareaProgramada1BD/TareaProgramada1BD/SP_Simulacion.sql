@@ -40,7 +40,7 @@ CREATE PROCEDURE dbo.InsertarMes
 				END
 			END
 			--PRINT(@InFechaFinal)
-			INSERT INTO PlanillaMensual (FechaInicio,
+			INSERT INTO dbo.PlanillaMensual (FechaInicio,
 										 FechaFinal)
 			VALUES (@InFechaInicio,
 					@InFechaFinal);
@@ -119,7 +119,7 @@ CREATE PROCEDURE dbo.InsertarSemana
 				@InFechaFinal=DATEADD(DAY,6,@InFechaInicio),  @InFechaTemporal=EOMONTH(@InFechaFinal), @Bandera='0';
 				--@FechaFinal=DATEADD(DAY,7,'2021-02-04'), @FechaTemporal=EOMONTH(@FechaFinal), @Bandera='0';
 			--PRINT(@InFechaFinal)
-			INSERT INTO PlanillaSemanal(IdMes,
+			INSERT INTO dbo.PlanillaSemanal(IdMes,
 										FechaInicio,
 										FechaFinal)
 			VALUES (@InIdMes,
@@ -162,15 +162,15 @@ CREATE PROCEDURE dbo.InsertarEmpleados
 		SET NOCOUNT ON;
 		BEGIN TRY
 			SET @OutResultCode=0;
-			INSERT INTO Empleado(Nombre,
-								 IdTipoIdentificacion,
-								 ValorDocumentoIdentificacion,
-								 IdDepartamento,
-								 IdPuesto,
-								 FechaNacimiento,
-								 Username,
-								 Pwd,
-								 Activo)
+			INSERT INTO dbo.Empleado(Nombre,
+									 IdTipoIdentificacion,
+									 ValorDocumentoIdentificacion,
+									 IdDepartamento,
+									 IdPuesto,
+									 FechaNacimiento,
+									 Username,
+									 Pwd,
+									 Activo)
 			VALUES(@InEmpleadoNombre,
 				   @InEmpleadoIdTipoIdentificacion,
 				   @InEmpleadoValorDocumentoIdentificacion,
@@ -218,13 +218,13 @@ CREATE PROCEDURE dbo.InsertarJornada
 			SELECT
 				@IdEmpleado=E.Id
 			FROM
-				Empleado E
+				dbo.Empleado E
 			WHERE
 				E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
 			--PRINT(@IdEmpleado)
-			INSERT INTO Jornada(IdEmpleado,
-								TipoJornada,
-								IdSemana)
+			INSERT INTO dbo.Jornada(IdEmpleado,
+									TipoJornada,
+									IdSemana)
 			VALUES(@IdEmpleado,
 				   @InIdJornada,
 				   @InIdSemana);
@@ -262,13 +262,15 @@ CREATE PROCEDURE dbo.MarcarAsistencia
 			SET @OutResultCode=0;
 			DECLARE @IdJornada INT;
 			SELECT
-				@IdJornada=J.Id FROM Empleado E, Jornada J
+				@IdJornada=J.Id
+			FROM
+				dbo.Empleado E, dbo.Jornada J
 			WHERE
 				E.ValorDocumentoIdentificacion=@InValorDocumentoIdentidad AND E.Id=J.IdEmpleado;
 			--PRINT(@IdJornada)
-			INSERT INTO MarcaAsistencia(IdJornada,
-										FechaEntrada,
-										FechaSalida)
+			INSERT INTO dbo.MarcaAsistencia(IdJornada,
+											FechaEntrada,
+											FechaSalida)
 			VALUES(@IdJornada,
 				   @InFechaEntrada,
 				   @InFechaSalida);
@@ -310,25 +312,25 @@ CREATE PROCEDURE dbo.AsociarEmpleadoConFijaNoObligatoria
 			SET @OutResultCode=0;
 			DECLARE @IdDeduccionXEmpleado INT;
 			BEGIN TRANSACTION AsociarDeduccion
-			INSERT INTO DeduccionXEmpleado(IdEmpleado,
-										   IdTipoDeduccion)
+			INSERT INTO dbo.DeduccionXEmpleado(IdEmpleado,
+											   IdTipoDeduccion)
 			SELECT
 				E.Id AS IdEmpleado,
 				TD.Id AS IdTipoDeduccion
 			FROM
-				Empleado E,
-				TipoDeduccion TD
+				dbo.Empleado E,
+				dbo.TipoDeduccion TD
 			WHERE
 				TD.Id=@InIdDeduccion AND
 				E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
 			SELECT TOP 1
 				@IdDeduccionXEmpleado=DXE.Id
 			FROM
-				DeduccionXEmpleado DXE
+				dbo.DeduccionXEmpleado DXE
 			ORDER BY
 				DXE.Id DESC;----------------------------------------------
-			INSERT INTO FijaNoObligatoria(IdDeduccionXEmpleado,
-										  Monto)
+			INSERT INTO dbo.FijaNoObligatoria(IdDeduccionXEmpleado,
+											  Monto)
 			VALUES(@IdDeduccionXEmpleado,
 				   @InMonto);
 			COMMIT TRANSACTION AsociarDeduccion;
@@ -366,31 +368,31 @@ CREATE PROCEDURE dbo.AsociarEmpleadoConPorcentualNoObligatoria
 			DECLARE @IdDeduccionXEmpleado INT,
 					@Monto DECIMAL(3,3);
 			BEGIN TRANSACTION AsociarDeduccion
-			INSERT INTO DeduccionXEmpleado(IdEmpleado,
-										   IdTipoDeduccion)
+			INSERT INTO dbo.DeduccionXEmpleado(IdEmpleado,
+											   IdTipoDeduccion)
 			SELECT
 				E.Id AS IdEmpleado,
 				TD.Id AS IdTipoDeduccion
 			FROM
-				Empleado E,
-				TipoDeduccion TD
+				dbo.Empleado E,
+				dbo.TipoDeduccion TD
 			WHERE
 				TD.Id=@InIdDeduccion AND
 				E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
 			SELECT TOP 1
 				@IdDeduccionXEmpleado=DXE.Id
 			FROM
-				DeduccionXEmpleado DXE
+				dbo.DeduccionXEmpleado DXE
 			ORDER BY
 				DXE.Id DESC;
 			SELECT
 				@Monto=TD.Valor
 			FROM
-				TipoDeduccion TD
+				dbo.TipoDeduccion TD
 			WHERE
 				TD.Id=@InIdDeduccion;
-			INSERT INTO PorcentualNoObligatoria(IdDeduccionXEmpleado,
-												Porcentaje)
+			INSERT INTO dbo.PorcentualNoObligatoria(IdDeduccionXEmpleado,
+													Porcentaje)
 			VALUES(@IdDeduccionXEmpleado,
 				   @Monto);
 			COMMIT TRANSACTION AsociarDeduccion;
@@ -429,11 +431,13 @@ CREATE PROCEDURE dbo.DesasociarEmpleadoConDeduccion
 		SET NOCOUNT ON;
 		BEGIN TRY
 			SET @OutResultCode=0;
-			DECLARE @EsPorcentual BIT, @IdDeduccionXEmpleado INT;
+			DECLARE
+				@EsPorcentual BIT,
+				@IdDeduccionXEmpleado INT;
 			SELECT
 				@EsPorcentual=TD.Porcentual
 			FROM
-				TipoDeduccion TD
+				dbo.TipoDeduccion TD
 			WHERE
 				TD.Id=@InIdDeduccion;
 			BEGIN TRANSACTION DesasociarDeduccion
@@ -442,12 +446,15 @@ CREATE PROCEDURE dbo.DesasociarEmpleadoConDeduccion
 				SELECT
 					@IdDeduccionXEmpleado=DXE.Id
 				FROM
-					PorcentualNoObligatoria PNO, DeduccionXEmpleado DXE, Empleado E
+					dbo.PorcentualNoObligatoria PNO,
+					dbo.DeduccionXEmpleado DXE,
+					dbo.Empleado E
 				WHERE
-					PNO.IdDeduccionXEmpleado=DXE.Id AND DXE.IdEmpleado=E.Id AND
+					PNO.IdDeduccionXEmpleado=DXE.Id AND
+					DXE.IdEmpleado=E.Id AND
 					E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
 				DELETE FROM
-					PorcentualNoObligatoria
+					dbo.PorcentualNoObligatoria
 				WHERE
 					PorcentualNoObligatoria.IdDeduccionXEmpleado=@IdDeduccionXEmpleado;
 			END
@@ -456,17 +463,20 @@ CREATE PROCEDURE dbo.DesasociarEmpleadoConDeduccion
 				SELECT
 					@IdDeduccionXEmpleado=DXE.Id
 				FROM
-					FijaNoObligatoria FNO, DeduccionXEmpleado DXE, Empleado E
+					dbo.FijaNoObligatoria FNO,
+					dbo.DeduccionXEmpleado DXE,
+					dbo.Empleado E
 				WHERE
-					FNO.IdDeduccionXEmpleado=DXE.Id AND DXE.IdEmpleado=E.Id AND
+					FNO.IdDeduccionXEmpleado=DXE.Id AND
+					DXE.IdEmpleado=E.Id AND
 					E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
 				DELETE FROM
-					FijaNoObligatoria
+					dbo.FijaNoObligatoria
 				WHERE
 					FijaNoObligatoria.IdDeduccionXEmpleado=@IdDeduccionXEmpleado;
 			END
 			DELETE FROM
-				DeduccionXEmpleado
+				dbo.DeduccionXEmpleado
 			WHERE
 				DeduccionXEmpleado.Id=@IdDeduccionXEmpleado;
 
@@ -510,7 +520,8 @@ CREATE PROCEDURE dbo.EliminarEmpleados
 				END;
 			UPDATE Empleado
 			SET Activo='0'
-			WHERE ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion
+			WHERE
+				ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion
 		END TRY
 		BEGIN CATCH
 			INSERT INTO DBErrores VALUES (
@@ -556,17 +567,18 @@ CREATE PROCEDURE dbo.InsertarMesXEmpleado
 		SET NOCOUNT ON;
 		BEGIN TRY
 			SET @OutResultCode=0;
-		INSERT INTO PlanillaMensualXEmpleado(IdMes,
-											 IdEmpleado,
-											 SalarioNeto,
-											 SalarioTotal)
+		INSERT INTO dbo.PlanillaMensualXEmpleado(IdMes,
+												 IdEmpleado,
+												 SalarioNeto,
+												 SalarioTotal)
 		SELECT
 			@InIdMesActual AS IdMes,
 			E.Id AS IdEmpleado,
 			0 AS SalarioNeto,
 			0 AS SalarioTotal
 		FROM
-			PlanillaMensual PM, Empleado E
+			dbo.PlanillaMensual PM,
+			dbo.Empleado E
 		WHERE
 			PM.Id=@InIdMesActual;
 		END TRY
@@ -602,16 +614,16 @@ CREATE PROCEDURE dbo.InsertarSemanaXEmpleado
 		SET NOCOUNT ON;
 		BEGIN TRY
 			SET @OutResultCode=0;
-		INSERT INTO PlanillaSemanalXEmpleado(IdSemana,
-											 IdEmpleado,
-											 SalarioNeto)
+		INSERT INTO dbo.PlanillaSemanalXEmpleado(IdSemana,
+												 IdEmpleado,
+												 SalarioNeto)
 		SELECT
 			@InIdSemanaActual AS IdSemana,
 			E.Id AS IdEmpleado,
 			0 AS SalarioNeto
 		FROM
-			PlanillaSemanal PS,
-			Empleado E
+			dbo.PlanillaSemanal PS,
+			dbo.Empleado E
 		WHERE
 			PS.Id=@InIdSemanaActual;
 		END TRY
@@ -654,8 +666,14 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 		SET NOCOUNT ON;
 		BEGIN TRY
 			SET @OutResultCode=0;
-		DECLARE @IdSemanaXEmpleado INT, @Monto INT, @HorasLaboradas INT,
-		@HorasEsperadas INT, @EsFeriado BIT, @IdMovimiento INT, @IdE INT, @IdMes INT;
+		DECLARE @IdSemanaXEmpleado INT,
+		@Monto INT,
+		@HorasLaboradas INT,
+		@HorasEsperadas INT,
+		@EsFeriado BIT,
+		@IdMovimiento INT,
+		@IdE INT,
+		@IdMes INT;
 		--
 		/*DECLARE @InFechaEntrada DATETIME, @InFechaSalida DATETIME, @InValorDocumentoIdentificacion INT,
 		@InIdSemana INT;
@@ -667,23 +685,32 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 		SELECT
 			@HorasEsperadas=DATEDIFF(hh,TDJ.HoraEntrada,TDJ.HoraSalida)
 		FROM
-			TiposDeJornada TDJ, Jornada J, Empleado E
+			dbo.TiposDeJornada TDJ,
+			dbo.Jornada J,
+			dbo.Empleado E
 		WHERE
-			TDJ.Id=J.TipoJornada AND J.IdEmpleado=E.Id AND
-			E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion AND J.IdSemana=@InIdSemana;
+			TDJ.Id=J.TipoJornada AND
+			J.IdEmpleado=E.Id AND
+			E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion AND
+			J.IdSemana=@InIdSemana;
 		SELECT
 			@IdSemanaXEmpleado=PSXM.Id
 		FROM
-			PlanillaSemanalXEmpleado PSXM, Empleado E
+			dbo.PlanillaSemanalXEmpleado PSXM,
+			dbo.Empleado E
 		WHERE
-			PSXM.IdSemana=@InIdSemana AND PSXM.IdEmpleado=E.Id AND E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
+			PSXM.IdSemana=@InIdSemana AND
+			PSXM.IdEmpleado=E.Id AND
+			E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
 		SET @OutAux=@IdSemanaXEmpleado;
 		SELECT
 			@Monto=P.SalarioXHora
 		FROM
-			Puesto P, Empleado E
+			dbo.Puesto P,
+			dbo.Empleado E
 		WHERE
-			P.Id=E.IdPuesto AND E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
+			P.Id=E.IdPuesto AND
+			E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
 		
 		IF EXISTS(SELECT F.Fecha FROM Feriados F WHERE @InFechaActual=F.Fecha)
 		BEGIN
@@ -702,21 +729,21 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 		BEGIN TRANSACTION Movimiento;
 		IF(@HorasLaboradas<=@HorasEsperadas)
 		BEGIN
-			INSERT INTO MovimientoPlanilla(Fecha,
-										   Monto,
-										   IdSemana,
-										   TipoMovimiento)
+			INSERT INTO dbo.MovimientoPlanilla(Fecha,
+											   Monto,
+											   IdSemana,
+											   TipoMovimiento)
 			VALUES(@InFechaActual,
 				  (@Monto*@HorasLaboradas),
 				  @IdSemanaXEmpleado,
 				  '1');
 			SELECT @IdMovimiento=SCOPE_IDENTITY();
-			INSERT INTO MovimientoHoras(Id,
-										IdMarcaAsistencia)
+			INSERT INTO dbo.MovimientoHoras(Id,
+											IdMarcaAsistencia)
 			VALUES(@IdMovimiento,
 				   @InIdMarcaAsistencia);
 			UPDATE
-				PlanillaSemanalXEmpleado
+				dbo.PlanillaSemanalXEmpleado
 			SET
 				SalarioNeto=SalarioNeto+(@Monto*@HorasLaboradas)
 			WHERE
@@ -724,21 +751,21 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 		END
 		ELSE
 		BEGIN
-			INSERT INTO MovimientoPlanilla(Fecha,
-										   Monto,
-										   IdSemana,
-										   TipoMovimiento)
+			INSERT INTO dbo.MovimientoPlanilla(Fecha,
+											   Monto,
+											   IdSemana,
+											   TipoMovimiento)
 			VALUES(@InFechaActual,
 				  (@Monto*@HorasEsperadas),
 				  @IdSemanaXEmpleado,
 				  '1');
 			SELECT @IdMovimiento=SCOPE_IDENTITY();
-			INSERT INTO MovimientoHoras(Id,
-										IdMarcaAsistencia)
+			INSERT INTO dbo.MovimientoHoras(Id,
+											IdMarcaAsistencia)
 			VALUES(@IdMovimiento,
 				   @InIdMarcaAsistencia);
 			UPDATE
-				PlanillaSemanalXEmpleado
+				dbo.PlanillaSemanalXEmpleado
 			SET
 				SalarioNeto=SalarioNeto+(@Monto*@HorasEsperadas)
 			WHERE
@@ -748,20 +775,20 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 			SELECT @HorasLaboradas=@HorasLaboradas-@HorasEsperadas;
 			IF(@EsFeriado=0)
 			BEGIN
-				INSERT INTO MovimientoPlanilla(Fecha,
-											   Monto,
-											   IdSemana,
-											   TipoMovimiento)
+				INSERT INTO dbo.MovimientoPlanilla(Fecha,
+												   Monto,
+												   IdSemana,
+												   TipoMovimiento)
 				VALUES(@InFechaActual,
 					  (@Monto*@HorasLaboradas*1.5),
 					   @IdSemanaXEmpleado,'2');
 				SELECT @IdMovimiento=SCOPE_IDENTITY();
-				INSERT INTO MovimientoHoras(Id,
-											IdMarcaAsistencia)
+				INSERT INTO dbo.MovimientoHoras(Id,
+												IdMarcaAsistencia)
 				VALUES(@IdMovimiento,
 					   @InIdMarcaAsistencia)
 				UPDATE
-					PlanillaSemanalXEmpleado
+					dbo.PlanillaSemanalXEmpleado
 				SET
 					SalarioNeto=SalarioNeto+(@Monto*@HorasLaboradas*1.5)
 				WHERE
@@ -769,21 +796,21 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 			END
 			ELSE
 			BEGIN
-				INSERT INTO MovimientoPlanilla(Fecha,
-											   Monto,
-											   IdSemana,
-											   TipoMovimiento)
+				INSERT INTO dbo.MovimientoPlanilla(Fecha,
+												   Monto,
+												   IdSemana,
+												   TipoMovimiento)
 				VALUES(@InFechaActual,
 					  (@Monto*@HorasLaboradas*2),
 					   @IdSemanaXEmpleado,
 					   '3');
 				SELECT @IdMovimiento=SCOPE_IDENTITY();
-				INSERT INTO MovimientoHoras(Id,
-											IdMarcaAsistencia)
+				INSERT INTO dbo.MovimientoHoras(Id,
+												IdMarcaAsistencia)
 				VALUES(@IdMovimiento,
 					   @InIdMarcaAsistencia)
 				UPDATE
-					PlanillaSemanalXEmpleado
+					dbo.PlanillaSemanalXEmpleado
 				SET
 					SalarioNeto=SalarioNeto+(@Monto*@HorasLaboradas*2)
 				WHERE
@@ -793,7 +820,9 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 		--Monto*Horas
 		SELECT @IdMes=PM.Id
 		FROM
-			PlanillaMensual PM, PlanillaSemanal PS, PlanillaSemanalXEmpleado PSX
+			dbo.PlanillaMensual PM, 
+			dbo.PlanillaSemanal PS, 
+			dbo.PlanillaSemanalXEmpleado PSX
 		WHERE
 			PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@IdSemanaXEmpleado;
 		SELECT
@@ -803,12 +832,15 @@ CREATE PROCEDURE dbo.CrearMovimientoCreditoDia
 		SELECT
 			@IdE=E.Id
 		FROM
-			Empleado E
+			dbo.Empleado E
 		WHERE
 			E.ValorDocumentoIdentificacion=@InValorDocumentoIdentificacion;
-		UPDATE PlanillaMensualXEmpleado
+		UPDATE
+			dbo.PlanillaMensualXEmpleado
 		SET SalarioTotal=SalarioTotal+@Monto
-		WHERE PlanillaMensualXEmpleado.IdMes=@IdMes AND PlanillaMensualXEmpleado.IdEmpleado=@IdE;
+		WHERE
+			PlanillaMensualXEmpleado.IdMes=@IdMes AND
+			PlanillaMensualXEmpleado.IdEmpleado=@IdE;
 
 
 		COMMIT TRANSACTION Movimiento;
@@ -847,33 +879,40 @@ CREATE PROCEDURE dbo.CrearMovimientoDebito
 		SET NOCOUNT ON;
 		BEGIN TRY
 			SET @OutResultCode=0;
-		DECLARE @Monto INT, @IdMovimiento INT, @TipoMovD INT, @EsPorcentual INT, @TipoMov INT, @IdMes INT, @IdE INT;
+		DECLARE @Monto INT,
+			    @IdMovimiento INT,
+				@TipoMovD INT,
+				@EsPorcentual INT,
+				@TipoMov INT,
+				@IdMes INT,
+				@IdE INT;
 
 		SELECT
 			@Monto=PSX.SalarioNeto
 		FROM
-			PlanillaSemanalXEmpleado PSX
+			dbo.PlanillaSemanalXEmpleado PSX
 		WHERE
 			PSX.Id=@InIdSemanaXEmpleado;
 
 		SELECT
 			@TipoMovD=DXE.IdTipoDeduccion
 		FROM
-			DeduccionXEmpleado DXE
+			dbo.DeduccionXEmpleado DXE
 		WHERE
 			DXE.Id=@InIdDeduccionXEmpleado;
 
 		SELECT
 			@TipoMov=TMD.IdMovimiento
 		FROM
-			TipoMovimientoDeduccion TMD
+			dbo.TipoMovimientoDeduccion TMD
 		WHERE
 			TMD.IdDeduccion=@TipoMovD;
 
 		SELECT
 			@EsPorcentual=TP.Porcentual
 		FROM
-			DeduccionXEmpleado DXE, TipoDeduccion TP
+			dbo.DeduccionXEmpleado DXE,
+			dbo.TipoDeduccion TP
 		WHERE
 			DXE.Id=@InIdDeduccionXEmpleado AND TP.Id=DXE.IdTipoDeduccion;
 		BEGIN TRANSACTION Debitar
@@ -882,19 +921,19 @@ CREATE PROCEDURE dbo.CrearMovimientoDebito
 			DECLARE @ValorP DECIMAL(3,3);
 			SELECT @ValorP=TD.Valor
 			FROM
-				TipoDeduccion TD
+				dbo.TipoDeduccion TD
 			WHERE
 				TD.Id=@TipoMovD;
-			INSERT INTO MovimientoPlanilla(Fecha,
-										   Monto,
-										   IdSemana,
-										   TipoMovimiento)
+			INSERT INTO dbo.MovimientoPlanilla(Fecha,
+											   Monto,
+											   IdSemana,
+											   TipoMovimiento)
 			VALUES (@InFechaActual,
 					@Monto*@ValorP,
 					@InIdSemanaXEmpleado,
 					@TipoMov)
 			UPDATE
-				PlanillaSemanalXEmpleado
+				dbo.PlanillaSemanalXEmpleado
 			SET
 				SalarioNeto=SalarioNeto-@Monto*@ValorP
 			WHERE
@@ -903,31 +942,40 @@ CREATE PROCEDURE dbo.CrearMovimientoDebito
 			SELECT
 				@IdMes=PM.Id
 			FROM
-				PlanillaMensual PM, PlanillaSemanal PS, PlanillaSemanalXEmpleado PSX
+				dbo.PlanillaMensual PM,
+				dbo.PlanillaSemanal PS,
+				dbo.PlanillaSemanalXEmpleado PSX
 			WHERE
-				PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@InIdSemanaXEmpleado;
+				PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND
+				PSX.Id=@InIdSemanaXEmpleado;
 			SELECT
 				@IdE=DXE.IdEmpleado FROM DeduccionXEmpleado DXE
 			WHERE
 				DXE.Id=@InIdDeduccionXEmpleado;
 
-			INSERT INTO DeduccionXEmpleadoXMes(IdPlanillaMensualXEmpleado,
-												TotalDeducciones,
-												IdTipoDeduccion)
+			INSERT INTO dbo.DeduccionXEmpleadoXMes(IdPlanillaMensualXEmpleado,
+													TotalDeducciones,
+													IdTipoDeduccion)
 			SELECT
-				PME.Id, @Monto*@ValorP, @TipoMovD
+				PME.Id,
+				@Monto*@ValorP,
+				@TipoMovD
 			FROM
-				PlanillaMensualXEmpleado PME
+				dbo.PlanillaMensualXEmpleado PME
 			WHERE
-				PME.IdMes=@IdMes AND PME.IdEmpleado=@IdE;
+				PME.IdMes=@IdMes AND
+				PME.IdEmpleado=@IdE;
 			---
 		END
 		ELSE
 		BEGIN
-			DECLARE @ValorF INT, @CantJueves INT;
-			SELECT @ValorF=FNO.Monto
+			DECLARE
+				@ValorF INT,
+				@CantJueves INT;
+			SELECT
+				@ValorF=FNO.Monto
 			FROM
-				FijaNoObligatoria FNO
+				dbo.FijaNoObligatoria FNO
 			WHERE
 				@InIdDeduccionXEmpleado=FNO.IdDeduccionXEmpleado;
 			SELECT
@@ -936,20 +984,24 @@ CREATE PROCEDURE dbo.CrearMovimientoDebito
 				@CantJueves=((DATEDIFF(day,PM.FechaInicio,PM.FechaFinal)+IIF(DATEPART(dw,PM.FechaInicio)>4,
 				DATEPART(dw,PM.FechaInicio)-4-7,DATEPART(dw,PM.FechaInicio)-4))/7)+1 --KEYLOR
 			FROM
-				PlanillaMensual PM, PlanillaSemanal PS, PlanillaSemanalXEmpleado PSX
+				dbo.PlanillaMensual PM,
+				dbo.PlanillaSemanal PS,
+				dbo.PlanillaSemanalXEmpleado PSX
 			WHERE
-				PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@InIdSemanaXEmpleado;
+				PM.Id=PS.IdMes AND
+				PS.Id=PSX.IdSemana AND
+				PSX.Id=@InIdSemanaXEmpleado;
 
-			INSERT INTO MovimientoPlanilla(Fecha,
-										   Monto,
-										   IdSemana,
-										   TipoMovimiento)
+			INSERT INTO dbo.MovimientoPlanilla(Fecha,
+											   Monto,
+											   IdSemana,
+											   TipoMovimiento)
 			VALUES (@InFechaActual,
 					@ValorF/@CantJueves,
 					@InIdSemanaXEmpleado,
 					@TipoMov)
 			UPDATE
-				PlanillaSemanalXEmpleado
+				dbo.PlanillaSemanalXEmpleado
 			SET
 				SalarioNeto=SalarioNeto-@ValorF/@CantJueves
 			WHERE
@@ -959,60 +1011,72 @@ CREATE PROCEDURE dbo.CrearMovimientoDebito
 			SELECT
 				@IdMes=PM.Id
 			FROM
-				PlanillaMensual PM, PlanillaSemanal PS, PlanillaSemanalXEmpleado PSX
+				dbo.PlanillaMensual PM,
+				dbo.PlanillaSemanal PS,
+				dbo.PlanillaSemanalXEmpleado PSX
 			WHERE
-				PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@InIdSemanaXEmpleado;
+				PM.Id=PS.IdMes AND
+				PS.Id=PSX.IdSemana AND
+				PSX.Id=@InIdSemanaXEmpleado;
 			SELECT
-				@IdE=DXE.IdEmpleado FROM DeduccionXEmpleado DXE
+				@IdE=DXE.IdEmpleado
+			FROM
+				dbo.DeduccionXEmpleado DXE
 			WHERE
 				DXE.Id=@InIdDeduccionXEmpleado;
 
-			INSERT INTO DeduccionXEmpleadoXMes(IdPlanillaMensualXEmpleado,
-												TotalDeducciones,
-												IdTipoDeduccion)
+			INSERT INTO dbo.DeduccionXEmpleadoXMes(IdPlanillaMensualXEmpleado,
+												   TotalDeducciones,
+												   IdTipoDeduccion)
 			SELECT
 				PME.Id,
 				(@ValorF/@CantJueves),
 				@TipoMovD
 			FROM
-				PlanillaMensualXEmpleado PME
+				dbo.PlanillaMensualXEmpleado PME
 			WHERE
-				PME.IdMes=@IdMes AND PME.IdEmpleado=@IdE;
+				PME.IdMes=@IdMes AND
+				PME.IdEmpleado=@IdE;
 			---
 		END
 
 		SELECT TOP 1
 			@IdMovimiento=MP.Id
 		FROM
-			MovimientoPlanilla MP
+			dbo.MovimientoPlanilla MP
 		ORDER BY
 			MP.Id DESC;
-		INSERT INTO MovimientoDeduccion(Id,
-										IdDeduccionXEmpleado)
+		INSERT INTO dbo.MovimientoDeduccion(Id,
+											IdDeduccionXEmpleado)
 		VALUES(@IdMovimiento,
 			   @InIdDeduccionXEmpleado)
 		SELECT
 			@IdMes=PM.Id
 		FROM
-			PlanillaMensual PM, PlanillaSemanal PS, PlanillaSemanalXEmpleado PSX
+			dbo.PlanillaMensual PM,
+			dbo.PlanillaSemanal PS,
+			dbo.PlanillaSemanalXEmpleado PSX
 		WHERE
-			PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@InIdSemanaXEmpleado;
+			PM.Id=PS.IdMes AND
+			PS.Id=PSX.IdSemana AND
+			PSX.Id=@InIdSemanaXEmpleado;
 		SELECT
 			@Monto=PSX.SalarioNeto
 		FROM
-			PlanillaSemanalXEmpleado PSX
+			dbo.PlanillaSemanalXEmpleado PSX
 		WHERE
 			PSX.Id=@InIdSemanaXEmpleado;
 		SELECT
 			@IdE=DXE.IdEmpleado
 		FROM
-			DeduccionXEmpleado DXE
+			dbo.DeduccionXEmpleado DXE
 		WHERE
 			DXE.Id=@InIdDeduccionXEmpleado;
-		UPDATE PlanillaMensualXEmpleado
+		UPDATE dbo.PlanillaMensualXEmpleado
 		SET SalarioNeto=SalarioNeto+@Monto
 		WHERE
-			PlanillaMensualXEmpleado.IdMes=@IdMes AND PlanillaMensualXEmpleado.IdEmpleado=@IdE;
+			PlanillaMensualXEmpleado.IdMes=@IdMes AND
+			PlanillaMensualXEmpleado.IdEmpleado=@IdE;
 
 
 		COMMIT TRANSACTION Debitar;
