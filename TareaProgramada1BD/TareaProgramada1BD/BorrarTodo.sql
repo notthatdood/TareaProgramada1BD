@@ -51,5 +51,6 @@ BEGIN
 	DROP PROCEDURE ListarSemana;
 	DROP PROCEDURE ListarUsuarios;
 	DROP PROCEDURE MarcarAsistencia;
+	DROP PROCEDURE ActualizarSalarioEmpleado;
 	SET @i=@i+1;
 END

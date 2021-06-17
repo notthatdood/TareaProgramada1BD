@@ -38,7 +38,16 @@ DECLARE @FechaActual DATE
 	, @InAsociaMonto INT
 	, @InAsociaValorDocumentoIdentificacion INT
 	, @InDesIdDeduccion INT
-	, @InDesValorDocumentoIdentificacion INT;
+	, @InDesValorDocumentoIdentificacion INT
+	,@EsFeriado BIT
+	---Variables para crédito día
+	,@IdSemanaXEmpleado INT
+	,@Monto INT
+	,@HorasLaboradas INT
+	,@HorasEsperadas INT
+	,@IdMovimiento INT
+	,@IdE INT
+	,@IdMes INT;
 
 
 SET @FechaActual=@doc.value('(/Datos/Operacion/@Fecha)[1]','date')
@@ -47,8 +56,22 @@ SET @IdMesActual=0;
 SET NOCOUNT ON;
 WHILE(@CantDias<=92) --92
 BEGIN
+	--Busca si el día es feriado/domingo
+	IF EXISTS(SELECT F.Fecha FROM Feriados F WHERE @FechaActual=F.Fecha)
+	BEGIN
+		SET @EsFeriado=1;
+	END
+	--ELSE IF(DATEPART(dw, @InFechaActual)=1)--ANDRES
+	ELSE IF(DATEPART(dw, @FechaActual)=7)--KEYLOR
+	BEGIN
+		SET @EsFeriado=1;
+	END
+	ELSE
+	BEGIN
+		SET @EsFeriado=0;
+	END
+	--SELECT @EsFeriado AS Feriado;
 
-	
 	--Este IF revisa si se trata o no de un viernes
 	--IF(DATEPART(dw, @FechaActual)=6) --ANDRES 
 	IF(DATEPART(dw, @FechaActual)=5) --KEYLOR
@@ -56,10 +79,12 @@ BEGIN
 		---------------------Este segmento crea las PlanillaXEmpleado y genera los movimientos---------------
 		IF(DATEDIFF(day, DATEADD(d,1,EOMONTH(@FechaActual,-1)), @FechaActual)<=7)
 		BEGIN
-			EXECUTE InsertarMesXEmpleado @IdMesActual, @OutResultCode OUTPUT
+			EXECUTE InsertarMesXEmpleado @IdMesActual,
+										 @OutResultCode OUTPUT
 			--SELECT @OutResultCode
 		END;
-		EXECUTE InsertarSemanaXEmpleado @IdSemanaActual, @OutResultCode OUTPUT
+		EXECUTE InsertarSemanaXEmpleado @IdSemanaActual,
+										@OutResultCode OUTPUT
 	END
 
 
@@ -82,22 +107,99 @@ BEGIN
 	WHERE
 		Operacion.value('@Fecha', 'date')=@FechaActual
 	SELECT
-		@Cont=1, @LargoTabla=COUNT(*)
+		@Cont=1,
+		@LargoTabla=COUNT(*)
 	FROM
 		#TempAsistencia
 	WHILE(@Cont<=@LargoTabla)
 	BEGIN
 		SELECT 
-			@InFechaEntrada=T.FechaEntrada, @InFechaSalida=T.FechaSalida,
+			@InFechaEntrada=T.FechaEntrada,
+			@InFechaSalida=T.FechaSalida,
 			@InMarcaValorDocumentoIdentificacion=T.ValorDocumentoIdentidad
-		FROM #TempAsistencia T
-		WHERE T.Id=@Cont;
+		FROM
+			#TempAsistencia T
+		WHERE
+			T.Id=@Cont;
 		--SELECT @InFechaEntrada, @InFechaSalida;
-		EXECUTE MarcarAsistencia @InFechaEntrada, @InFechaSalida,
-		@InMarcaValorDocumentoIdentificacion, @IdMarcaAsistencia OUTPUT, @OutResultCode OUTPUT
+		EXECUTE MarcarAsistencia @InFechaEntrada,
+								 @InFechaSalida,
+								 @InMarcaValorDocumentoIdentificacion,
+								 @IdMarcaAsistencia OUTPUT,
+								 @OutResultCode OUTPUT
 		--SELECT @OutResultCode;
-		EXECUTE CrearMovimientoCreditoDia @FechaActual, @IdSemanaActual, @InFechaEntrada, @InFechaSalida,
-		@InMarcaValorDocumentoIdentificacion, @IdMarcaAsistencia, @Auxiliar OUTPUT, @OutResultCode OUTPUT;
+		--Pre-procensando datos necesarios para los creditos día--------------------------
+		SELECT
+			@HorasLaboradas=DATEDIFF(hh,@InFechaEntrada,@InFechaSalida);
+		SELECT
+			@HorasEsperadas=DATEDIFF(hh,TDJ.HoraEntrada,TDJ.HoraSalida)
+		FROM
+			dbo.TiposDeJornada TDJ,
+			dbo.Jornada J,
+			dbo.Empleado E
+		WHERE
+			TDJ.Id=J.TipoJornada AND
+			J.IdEmpleado=E.Id AND
+			E.ValorDocumentoIdentificacion=@InMarcaValorDocumentoIdentificacion AND
+			J.IdSemana=@IdSemanaActual;
+		SELECT
+			@IdSemanaXEmpleado=PSXM.Id
+		FROM
+			dbo.PlanillaSemanalXEmpleado PSXM,
+			dbo.Empleado E
+		WHERE
+			PSXM.IdSemana=@IdSemanaActual AND
+			PSXM.IdEmpleado=E.Id AND
+			E.ValorDocumentoIdentificacion=@InMarcaValorDocumentoIdentificacion;
+		SET @Auxiliar=@IdSemanaXEmpleado;
+		SELECT
+			@Monto=P.SalarioXHora
+		FROM
+			dbo.Puesto P,
+			dbo.Empleado E
+		WHERE
+			P.Id=E.IdPuesto AND
+			E.ValorDocumentoIdentificacion=@InMarcaValorDocumentoIdentificacion;
+
+		EXECUTE CrearMovimientoCreditoDia @FechaActual,
+										  @IdSemanaActual,
+										  @InFechaEntrada,
+										  @InFechaSalida,
+										  @InMarcaValorDocumentoIdentificacion,
+										  @IdMarcaAsistencia,
+										  @EsFeriado,
+										  @IdSemanaXEmpleado,
+										  @Monto,
+										  @HorasLaboradas,
+										  @HorasEsperadas,
+										  @IdMovimiento,
+										  @IdE,
+										  @IdMes,
+										  --@Auxiliar OUTPUT,
+										  @OutResultCode OUTPUT;
+
+		SELECT @IdMes=PM.Id
+		FROM
+			dbo.PlanillaMensual PM, 
+			dbo.PlanillaSemanal PS, 
+			dbo.PlanillaSemanalXEmpleado PSX
+		WHERE
+			PM.Id=PS.IdMes AND PS.Id=PSX.IdSemana AND PSX.Id=@IdSemanaXEmpleado;
+		SELECT
+			@Monto=PSX.SalarioNeto FROM PlanillaSemanalXEmpleado PSX
+		WHERE
+			PSX.Id=@IdSemanaXEmpleado;
+		SELECT
+			@IdE=E.Id
+		FROM
+			dbo.Empleado E
+		WHERE
+			E.ValorDocumentoIdentificacion=@InMarcaValorDocumentoIdentificacion;
+
+		EXECUTE ActualizarSalarioEmpleado @Monto,
+										  @IdE,
+										  @IdMes,
+										  @OutResultCode OUTPUT;
 		--SELECT @OutResultCode;
 		--SELECT @FechaActual, @IdSemanaActual, @InFechaEntrada, @InFechaSalida,
 		--@InMarcaValorDocumentoIdentificacion, @IdMarcaAsistencia
@@ -118,14 +220,20 @@ BEGIN
 		@doc.nodes('/Datos') AS A(Datos)
 	CROSS APPLY A.Datos.nodes('./Operacion') AS B(Operacion)
 	CROSS APPLY B.Operacion.nodes('./EliminarEmpleado  ') AS C(Eliminar)
-	WHERE Operacion.value('@Fecha', 'date')=@FechaActual
-	SELECT @Cont=1, @LargoTabla=COUNT(*) FROM #TempEliminar
+	WHERE
+		Operacion.value('@Fecha', 'date')=@FechaActual
+	SELECT
+		@Cont=1, @LargoTabla=COUNT(*)
+	FROM
+		#TempEliminar
 	WHILE(@Cont<=@LargoTabla)
 	BEGIN
 		SELECT 
 			@InEliminarValorDocumentoIdentificacion=T.ValorDocumentoIdentidad
-		FROM #TempEliminar T
-		WHERE T.Id=@Cont;
+		FROM
+			#TempEliminar T
+		WHERE
+			T.Id=@Cont;
 		EXECUTE EliminarEmpleados @InEliminarValorDocumentoIdentificacion, @OutResultCode OUTPUT
 		--SELECT @OutResultCode;
 		SET @Cont=@Cont+1;
@@ -147,12 +255,22 @@ BEGIN
 				--EXECUTE InsertarMesXEmpleado @IdMesActual, @OutResultCode OUTPUT
 				SELECT @OutResultCode
 			END;
-			SELECT TOP 1 @IdSemanaXEmpleadoTemp=PSX.Id
+			SELECT TOP 1
+				@IdSemanaXEmpleadoTemp=PSX.Id
 			FROM
-				PlanillaSemanalXEmpleado PSX WHERE PSX.IdSemana=@IdSemanaActual ORDER BY PSX.Id DESC;
-			SELECT TOP 1 @IdSemanaXEmpleadoIndice=PSX.Id
+				dbo.PlanillaSemanalXEmpleado PSX
+			WHERE
+				PSX.IdSemana=@IdSemanaActual
+			ORDER BY
+				PSX.Id DESC;
+			SELECT TOP 1
+				@IdSemanaXEmpleadoIndice=PSX.Id
 			FROM
-				PlanillaSemanalXEmpleado PSX WHERE PSX.IdSemana=@IdSemanaActual ORDER BY PSX.Id ASC;
+				dbo.PlanillaSemanalXEmpleado PSX
+			WHERE
+				PSX.IdSemana=@IdSemanaActual
+			ORDER BY
+				PSX.Id ASC;
 			WHILE(@IdSemanaXEmpleadoIndice<=@IdSemanaXEmpleadoTemp)
 			BEGIN
 				/*DECLARE @IdDeduccionXEmpleadoTemp INT, @IdDeduccionXEmpleadoIndice INT;
@@ -173,13 +291,20 @@ BEGIN
 									 IdEmpleado,
 									 IdTipoDeduccion)
 				SELECT
-					DXE.Id, DXE.IdEmpleado, DXE.IdTipoDeduccion
+					DXE.Id,
+					DXE.IdEmpleado,
+					DXE.IdTipoDeduccion
 				FROM
-					DeduccionXEmpleado DXE, PlanillaSemanalXEmpleado PSX
+					DeduccionXEmpleado DXE,
+					PlanillaSemanalXEmpleado PSX
 				WHERE
-					DXE.IdEmpleado=PSX.IdEmpleado AND PSX.Id=@IdSemanaXEmpleadoIndice;
+					DXE.IdEmpleado=PSX.IdEmpleado AND
+					PSX.Id=@IdSemanaXEmpleadoIndice;
 				SELECT
-					@Cont=1, @LargoTabla=COUNT(*) FROM #TempDXE
+					@Cont=1,
+					@LargoTabla=COUNT(*)
+				FROM
+					#TempDXE
 				WHILE(@Cont<=@LargoTabla)
 				BEGIN
 					SELECT
@@ -240,8 +365,10 @@ BEGIN
 			@doc.nodes('/Datos') AS A(Datos)
 		CROSS APPLY A.Datos.nodes('./Operacion') AS B(Operacion)
 		CROSS APPLY B.Operacion.nodes('./NuevoEmpleado') AS C(NuevoEmpleado)
-		WHERE Operacion.value('@Fecha', 'date')=@FechaActual
-		SELECT @Cont=1, @LargoTabla=COUNT(*) FROM #TempEmpleados
+		WHERE
+			Operacion.value('@Fecha', 'date')=@FechaActual
+		SELECT
+			@Cont=1, @LargoTabla=COUNT(*) FROM #TempEmpleados
 		WHILE(@Cont<=@LargoTabla)
 		BEGIN
 			SELECT 
@@ -253,8 +380,10 @@ BEGIN
 				@InEmpleadoIdDepartamento=T.IdDepartamento,
 				@InEmpleadoUsername=T.Username,
 				@InEmpleadoPwd=T.Pwd
-			FROM #TempEmpleados T
-			WHERE T.Id=@Cont;
+			FROM
+				#TempEmpleados T
+			WHERE
+				T.Id=@Cont;
 			EXECUTE InsertarEmpleados @InEmpleadoNombre, @InEmpleadoIdTipoIdentificacion,
 				@InEmpleadoValorDocumentoIdentificacion, @InEmpleadoFechaNacimiento, @InEmpleadoIdPuesto,
 				@InEmpleadoIdDepartamento, @InEmpleadoUsername, @InEmpleadoPwd, @OutResultCode OUTPUT
@@ -332,13 +461,15 @@ BEGIN
 	--SELECT @FechaActual;
 	--SELECT * FROM #TempAsocia;
 	SELECT
-		@Cont=1, @LargoTabla=COUNT(*)
+		@Cont=1,
+		@LargoTabla=COUNT(*)
 	FROM
 		#TempAsocia
 	WHILE(@Cont<=@LargoTabla)
 	BEGIN
 		SELECT 
-			@InAsociaIdDeduccion=T.IdDeduccion, @InAsociaMonto=T.Monto,
+			@InAsociaIdDeduccion=T.IdDeduccion,
+			@InAsociaMonto=T.Monto,
 			@InAsociaValorDocumentoIdentificacion=T.ValorDocumentoIdentidad
 		FROM
 			#TempAsocia T
@@ -379,7 +510,8 @@ BEGIN
 	WHERE
 		Operacion.value('@Fecha', 'date')=@FechaActual
 	SELECT
-		@Cont=1, @LargoTabla=COUNT(*)
+		@Cont=1,
+		@LargoTabla=COUNT(*)
 	FROM
 		#TempDeasocia
 	WHILE(@Cont<=@LargoTabla)
@@ -392,7 +524,7 @@ BEGIN
 		WHERE
 			T.Id=@Cont;
 		EXECUTE DesasociarEmpleadoConDeduccion @InDesIdDeduccion,
-		@InDesValorDocumentoIdentificacion, @OutResultCode OUTPUT
+				@InDesValorDocumentoIdentificacion, @OutResultCode OUTPUT
 		--SELECT @OutResultCode;
 		SET @Cont=@Cont+1;
 	END
