@@ -59,5 +59,15 @@ BEGIN
 	DROP PROCEDURE ActualizarSalarioEmpleado;
 	DROP PROCEDURE InsertarTipoOperacion;
 	DROP PROCEDURE InsertarBitacora;
+	DROP PROCEDURE CrearMovimientoHorasNormales;
+	DROP PROCEDURE CrearMovimientoHorasExtra;
+	DROP PROCEDURE CrearMovimientoHorasExtraDobles;
+	DROP PROCEDURE CrearMovimientoDebitoPorcentual;
+	DROP PROCEDURE ActualizarPlanillaSemanalPorcentual;
+	DROP PROCEDURE CrearMovimientoDebitoFijo;
+	DROP PROCEDURE ActualizarPlanillaSemanalFijo;
+	DROP PROCEDURE ActualizarDeduccionXEmpleadoXMes;
+	DROP PROCEDURE InsertarMovDeduccion;
+	DROP PROCEDURE ActualizarPlanillaMensualXEmpleado;
 	SET @i=@i+1;
 END

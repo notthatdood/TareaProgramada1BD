@@ -61,7 +61,13 @@ DECLARE @FechaActual DATE
 	,@Terminar INT
 	,@IdUltimaCorrida INT
 	,@IdUltimoDetalleCorrida INT
-	,@ProduceError INT;
+	,@ProduceError INT
+	,@TipoMovD INT
+	,@EsPorcentual INT
+	,@TipoMov INT
+	,@ValorP DECIMAL(3,3)
+	,@ValorF INT
+	,@CantJueves INT;
 
 	--SELECT @FechaItera=Min(FechaOperacion), @FechaFinal=max(FechaOperacion) FROM @doc.nodes('/FechaOperacion');
 	SELECT
@@ -80,6 +86,7 @@ SET @IdUltimoDetalleCorrida=1;
 SET NOCOUNT ON;
 WHILE(@CantDias<@FechaFinal)
 BEGIN
+
 	IF(DATEPART(dw, @FechaActual)=4)--KEYLOR
 	BEGIN----------------Crea nuevo mes en caso de iniciar el mes----------------------------------
 		IF(DATEDIFF(day, DATEADD(d,1,EOMONTH(@FechaActual,-1)), @FechaActual)<=7)
@@ -174,16 +181,6 @@ BEGIN
 
 			WHILE(@IdSXECont<=@IdSemanaXEmpleadoTemp)
 			BEGIN
-				/*DECLARE @IdDeduccionXEmpleadoTemp INT, @IdDeduccionXEmpleadoIndice INT;
-				SELECT TOP 1 @IdDeduccionXEmpleadoTemp=DXE.Id
-				FROM DeduccionXEmpleado DXE, PlanillaSemanalXEmpleado PSX
-				WHERE DXE.IdEmpleado=PSX.IdEmpleado AND PSX.Id=@IdSemanaXEmpleadoIndice
-				ORDER BY DXE.Id DESC;
-
-				SELECT TOP 1 @IdDeduccionXEmpleadoIndice=DXE.Id
-				FROM DeduccionXEmpleado DXE, PlanillaSemanalXEmpleado PSX
-				WHERE DXE.IdEmpleado=PSX.IdEmpleado AND PSX.Id=@IdSemanaXEmpleadoIndice
-				ORDER BY DXE.Id ASC;*/
 				CREATE TABLE #TempDXE(Id INT IDENTITY(1,1) PRIMARY KEY,
 						IdDXE INT,
 						IdEmpleado INT,
@@ -217,19 +214,163 @@ BEGIN
 
 				WHILE(@Cont<=@LargoTabla)
 				BEGIN
+					---------------Pre-procesando datos--------
 					SELECT
 						@IdDeduccionXEmpleadoIndice=T.IdDXE
 					FROM
 						#TempDXE T
 					WHERE
 						T.Id=@Cont;
-					EXECUTE CrearMovimientoDebito @FechaActual,
+
+					SELECT
+						@Monto=PSX.SalarioNeto
+					FROM
+						dbo.PlanillaSemanalXEmpleado PSX
+					WHERE
+						PSX.Id=@IdSemanaXEmpleadoIndice;
+
+					SELECT
+						@TipoMovD=DXE.IdTipoDeduccion
+					FROM
+						dbo.DeduccionXEmpleado DXE
+					WHERE
+						DXE.Id=@IdDeduccionXEmpleadoIndice  AND
+						DXE.Activo='1';
+
+					SELECT
+						@TipoMov=TMD.IdMovimiento
+					FROM
+						dbo.TipoMovimientoDeduccion TMD
+					WHERE
+						TMD.IdDeduccion=@TipoMovD;
+
+					SELECT
+						@EsPorcentual=TP.Porcentual
+					FROM
+						dbo.DeduccionXEmpleado DXE,
+						dbo.TipoDeduccion TP
+					WHERE
+						DXE.Id=@IdDeduccionXEmpleadoIndice AND
+						TP.Id=DXE.IdTipoDeduccion AND
+						DXE.Activo='1';
+					IF(@EsPorcentual=1)
+					BEGIN
+						SELECT
+							@ValorP=TD.Valor
+						FROM
+							dbo.TipoDeduccion TD
+						WHERE
+							TD.Id=@TipoMovD;
+						EXECUTE CrearMovimientoDebitoPorcentual @FechaActual,
 												  @IdSemanaXEmpleadoIndice,
-												  @IdDeduccionXEmpleadoIndice,
+												  @Monto,
+												  @IdMovimiento,
+												  @TipoMovD,
+												  @TipoMov,
+												  @ValorP,
 												  @OutResultCode OUTPUT
-					Print('Debito')
+						EXECUTE ActualizarPlanillaSemanalPorcentual @IdSemanaXEmpleadoIndice,
+																	@Monto,
+																	@ValorP,
+																	@OutResultCode OUTPUT
+						SET @Monto=@Monto*@ValorP;
+					END
+					ELSE
+					BEGIN
+						SELECT
+							@ValorF=FNO.Monto
+						FROM
+							dbo.FijaNoObligatoria FNO
+						WHERE
+							@IdDeduccionXEmpleadoIndice=FNO.IdDeduccionXEmpleado;
+						SELECT
+							/*@CantJueves=((DATEDIFF(day,PM.FechaInicio,PM.FechaFinal)+IIF(DATEPART(dw,PM.FechaInicio)>5,
+							DATEPART(dw,PM.FechaInicio)-5-7,DATEPART(dw,PM.FechaInicio)-5))/7)+1*/--ANDRES
+							@CantJueves=((DATEDIFF(day,PM.FechaInicio,PM.FechaFinal)+IIF(DATEPART(dw,PM.FechaInicio)>4,
+							DATEPART(dw,PM.FechaInicio)-4-7,DATEPART(dw,PM.FechaInicio)-4))/7)+1 --KEYLOR
+						FROM
+							dbo.PlanillaMensual PM,
+							dbo.PlanillaSemanal PS,
+							dbo.PlanillaSemanalXEmpleado PSX
+						WHERE
+							PM.Id=PS.IdMes AND
+							PS.Id=PSX.IdSemana AND
+							PSX.Id=@IdSemanaXEmpleadoIndice;
+
+						EXECUTE CrearMovimientoDebitoFijo @FechaActual,
+												  @IdSemanaXEmpleadoIndice,
+												  @Monto,
+												  @IdMovimiento,
+												  @TipoMov,
+												  @ValorF,
+												  @CantJueves,
+												  @OutResultCode OUTPUT
+						EXECUTE ActualizarPlanillaSemanalFijo @IdSemanaXEmpleadoIndice,
+																	@Monto,
+																	@ValorF,
+																	@CantJueves,
+																	@OutResultCode OUTPUT
+						SET @Monto=(@ValorF/@CantJueves);
+					END
+					SELECT
+						@IdMes=PM.Id
+					FROM
+						dbo.PlanillaMensual PM,
+						dbo.PlanillaSemanal PS,
+						dbo.PlanillaSemanalXEmpleado PSX
+					WHERE
+						PM.Id=PS.IdMes AND
+						PS.Id=PSX.IdSemana AND
+						PSX.Id=@IdSemanaXEmpleadoIndice;
+
+					SELECT
+						@IdE=DXE.IdEmpleado
+					FROM
+						DeduccionXEmpleado DXE
+					WHERE
+						DXE.Id=@IdDeduccionXEmpleadoIndice AND
+						DXE.Activo='1';
+
+					EXECUTE ActualizarDeduccionXEmpleadoXMes @TipoMovD,
+															 @Monto,
+															 @IdMes,
+															 @IdE,
+															 @OutResultCode OUTPUT
+
+					SELECT TOP 1
+						@IdMovimiento=MP.Id
+					FROM
+						dbo.MovimientoPlanilla MP
+					ORDER BY
+						MP.Id DESC;
+					EXECUTE InsertarMovDeduccion @IdMovimiento,
+												 @IdDeduccionXEmpleadoIndice,
+												 @IdSemanaXEmpleadoIndice,
+												 @IdMes,
+												 @OutResultCode OUTPUT
+					SELECT
+						@Monto=PSX.SalarioNeto
+					FROM
+						dbo.PlanillaSemanalXEmpleado PSX
+					WHERE
+						PSX.Id=@IdSemanaXEmpleadoIndice;
+					SELECT
+						@IdE=DXE.IdEmpleado
+					FROM
+						dbo.DeduccionXEmpleado DXE
+					WHERE
+						DXE.Id=@IdDeduccionXEmpleadoIndice AND
+						DXE.Activo='1';
+						
+					EXECUTE ActualizarPlanillaMensualXEmpleado @Monto,
+															   @IdE,
+															   @IdMes,
+															   @OutResultCode OUTPUT
+
+
+
 					SET @Cont=@Cont+1;
-					--SELECT AAA=@IdDeduccionXEmpleadoIndice, BBB=@IdDeduccionXEmpleadoTemp;
+					
 				END
 				DROP TABLE #TempDXE
 				SET @IdSXECont=@IdSXECont+1;
@@ -614,14 +755,19 @@ BEGIN
 				IF(@InAsociaMonto=0)
 				BEGIN
 					EXECUTE AsociarEmpleadoConPorcentualNoObligatoria @InAsociaIdDeduccion,
-					@InAsociaValorDocumentoIdentificacion, @OutResultCode OUTPUT
+																	  @InAsociaValorDocumentoIdentificacion,
+																	  @FechaActual,
+																	  @OutResultCode OUTPUT
 					--SELECT @OutResultCode;
 					SET @InAsociaMonto=@InAsociaMonto;
 				END
 				ELSE IF(@InAsociaMonto>0)
 				BEGIN
-					EXECUTE AsociarEmpleadoConFijaNoObligatoria @InAsociaIdDeduccion, @InAsociaMonto,
-					@InAsociaValorDocumentoIdentificacion, @OutResultCode OUTPUT
+					EXECUTE AsociarEmpleadoConFijaNoObligatoria @InAsociaIdDeduccion,
+																@InAsociaMonto,
+																@InAsociaValorDocumentoIdentificacion,
+																@FechaActual,
+																@OutResultCode OUTPUT
 					--SELECT @OutResultCode;
 				END
 				IF(@ProduceError=1)
@@ -742,6 +888,7 @@ BEGIN
 					T.Id=@SecItera;
 				EXECUTE DesasociarEmpleadoConDeduccion @InDesIdDeduccion,
 													   @InDesValorDocumentoIdentificacion,
+													   @FechaActual,
 													   @OutResultCode OUTPUT
 				IF(@ProduceError=1)
 					BEGIN
@@ -1025,22 +1172,61 @@ BEGIN
 					P.Id=E.IdPuesto AND
 					E.ValorDocumentoIdentificacion=@InMarcaValorDocumentoIdentificacion;
 
-				EXECUTE CrearMovimientoCreditoDia @FechaActual,
-												  @IdSemanaActual,
-												  @InFechaEntrada,
-												  @InFechaSalida,
-												  @InMarcaValorDocumentoIdentificacion,
-												  @IdMarcaAsistencia,
-												  @EsFeriado,
-												  @IdSemanaXEmpleado,
-												  @Monto,
-												  @HorasLaboradas,
-												  @HorasEsperadas,
-												  @IdMovimiento,
-												  @IdE,
-												  @IdMes,
-												  --@Auxiliar OUTPUT,
-												  @OutResultCode OUTPUT;
+				EXECUTE CrearMovimientoHorasNormales @FechaActual,
+												    @IdSemanaActual,
+												    @InFechaEntrada,
+												    @InFechaSalida,
+												    @InMarcaValorDocumentoIdentificacion,
+												    @IdMarcaAsistencia,
+												    @IdSemanaXEmpleado,
+												    @Monto,
+												    @HorasEsperadas,
+												    @IdMovimiento,
+												    @IdE,
+												    @IdMes,
+												    --@Auxiliar OUTPUT,
+												    @OutResultCode OUTPUT;
+				IF(@HorasLaboradas>@HorasEsperadas)
+				BEGIN
+					SELECT
+						@HorasLaboradas=@HorasLaboradas-@HorasEsperadas;
+					IF(@EsFeriado=0)
+					BEGIN
+						EXECUTE CrearMovimientoHorasExtra @FechaActual,
+														  @IdSemanaActual,
+														  @InFechaEntrada,
+													      @InFechaSalida,
+														  @InMarcaValorDocumentoIdentificacion,
+														  @IdMarcaAsistencia,
+														  @IdSemanaXEmpleado,
+														  @Monto,
+														  @HorasLaboradas,
+														  @IdMovimiento,
+														  @IdE,
+														  @IdMes,
+													      --@Auxiliar OUTPUT,
+														  @OutResultCode OUTPUT;
+					END
+					ELSE
+					BEGIN
+						EXECUTE CrearMovimientoHorasExtraDobles @FechaActual,
+																@IdSemanaActual,
+																@InFechaEntrada,
+																@InFechaSalida,
+																@InMarcaValorDocumentoIdentificacion,
+																@IdMarcaAsistencia,
+																@IdSemanaXEmpleado,
+																@Monto,
+																@HorasLaboradas,
+																@IdMovimiento,
+																@IdE,
+																@IdMes,
+																--@Auxiliar OUTPUT,
+																@OutResultCode OUTPUT;
+					END
+				END
+
+
 				Print('Credito')
 				SELECT @IdMes=PM.Id
 				FROM

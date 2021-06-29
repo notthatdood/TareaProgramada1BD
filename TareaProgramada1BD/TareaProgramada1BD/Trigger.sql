@@ -13,9 +13,9 @@ AFTER INSERT
 										   IdTipoDeduccion,
 										   Activo)
 			SELECT
-				E.Id,
-				TD.Id,
-				'1'
+				E.Id AS IdEmpleado,
+				TD.Id AS IdTipoDeduccion,
+				'1' AS Activo
 			FROM
 				Empleado E,
 				TipoDeduccion TD

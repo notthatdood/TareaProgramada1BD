@@ -124,6 +124,7 @@ GO
 
 CREATE TABLE DeduccionXEmpleado ( Id INT IDENTITY(1,1) PRIMARY KEY,
 						IdEmpleado INT, IdTipoDeduccion INT, Activo BIT,
+						FechaInicio DATE, FechaFin DATE,
 						FOREIGN KEY (IdEmpleado) REFERENCES Empleado (Id),
 						FOREIGN KEY (IdTipoDeduccion) REFERENCES TipoDeduccion (Id))
 GO
@@ -134,15 +135,15 @@ CREATE TABLE MovimientoDeduccion ( Id INT PRIMARY KEY,
 						FOREIGN KEY (IdDeduccionXEmpleado) REFERENCES DeduccionXEmpleado (Id))
 GO
 
-CREATE TABLE FijaNoObligatoria ( IdDeduccionXEmpleado INT, Monto INT,
+CREATE TABLE FijaNoObligatoria ( IdDeduccionXEmpleado INT PRIMARY KEY, Monto INT,
 						FOREIGN KEY (IdDeduccionXEmpleado) REFERENCES DeduccionXEmpleado (Id))
 GO
 
-CREATE TABLE PorcentualNoObligatoria ( IdDeduccionXEmpleado INT, Porcentaje DECIMAL(3,3),
+CREATE TABLE PorcentualNoObligatoria ( IdDeduccionXEmpleado INT PRIMARY KEY, Porcentaje DECIMAL(3,3),
 						FOREIGN KEY (IdDeduccionXEmpleado) REFERENCES DeduccionXEmpleado (Id))
 GO
 
-CREATE TABLE PorcentualSiObligatoria ( IdTipoDeduccion INT, Porcentaje DECIMAL(3,3),
+CREATE TABLE PorcentualSiObligatoria ( IdTipoDeduccion INT PRIMARY KEY, Porcentaje DECIMAL(3,3),
 						FOREIGN KEY (IdTipoDeduccion) REFERENCES TipoDeduccion (Id))
 GO
 
