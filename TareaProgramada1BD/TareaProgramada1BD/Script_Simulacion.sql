@@ -633,7 +633,7 @@ BEGIN
 											TipoOperacionXML,
 											RefID)
 				VALUES(@IdUltimaCorrida,
-					   2,
+					   3,
 					   @SecItera)
 				SET @IdUltimODetalleCorrida=SCOPE_IDENTITY();
 				SET @SecItera=@SecItera+1;
@@ -703,24 +703,98 @@ BEGIN
 	WHERE
 		Operacion.value('@Fecha', 'date')=@FechaActual
 	SELECT
-		@Cont=1,
-		@LargoTabla=COUNT(*)
+		@SecItera=1,
+		@SecFinal=COUNT(*),
+		@Terminar=0
 	FROM
 		#TempDeasocia
-	WHILE(@Cont<=@LargoTabla)
+
+	WHILE(@Terminar=0)
 	BEGIN
-		SELECT 
-			@InDesIdDeduccion=T.IdDeduccion,
-			@InDesValorDocumentoIdentificacion=T.ValorDocumentoIdentidad
+		SELECT
+			@SecItera=(DC.RefID)+1
 		FROM
-			#TempDeasocia T
+			DetalleCorrida DC,
+			Corrida C
 		WHERE
-			T.Id=@Cont;
-		EXECUTE DesasociarEmpleadoConDeduccion @InDesIdDeduccion,
-				@InDesValorDocumentoIdentificacion, @OutResultCode OUTPUT
-		--SELECT @OutResultCode;
-		SET @Cont=@Cont+1;
-		Print('Desasociar')
+			@IdUltimaCorrida=DC.IdCorrida AND
+			DC.Id=@IdUltimoDetalleCorrida AND
+			DC.TipoOperacionXML=4;
+
+		INSERT INTO Bitacora (IdTipoOperacion,
+							  Texto,
+							  Fecha,
+							  IdTipoBitacora)
+		VALUES(4,
+			   'Nueva iteracion procesando desasociar deducciones inciando en '+convert(varchar, @SecItera),
+			   @FechaActual,
+			   1)
+		BEGIN TRY
+			WHILE(@SecItera<=@SecFinal)
+			BEGIN
+				SELECT 
+					@InDesIdDeduccion=T.IdDeduccion,
+					@InDesValorDocumentoIdentificacion=T.ValorDocumentoIdentidad,
+					@ProduceError=T.ProduceError
+				FROM
+					#TempDeasocia T
+				WHERE
+					T.Id=@SecItera;
+				EXECUTE DesasociarEmpleadoConDeduccion @InDesIdDeduccion,
+													   @InDesValorDocumentoIdentificacion,
+													   @OutResultCode OUTPUT
+				IF(@ProduceError=1)
+					BEGIN
+						SELECT @ProduceError/0;
+					END
+				---------Se inserta en detalle corrida--------------
+				INSERT INTO DetalleCorrida (IdCorrida,
+											TipoOperacionXML,
+											RefID)
+				VALUES(@IdUltimaCorrida,
+					   4,
+					   @SecItera)
+				SET @IdUltimODetalleCorrida=SCOPE_IDENTITY();
+				SET @SecItera=@SecItera+1;
+			END
+			SET @Terminar=1;
+			INSERT INTO Bitacora (IdTipoOperacion,
+								  Texto,
+								  Fecha,
+								  IdTipoBitacora)
+			VALUES(4,
+				   'Se finalizó procesando desasociar deducciones en '+convert(varchar, @FechaActual),
+				   @FechaActual,
+				   3)
+		END TRY
+		BEGIN CATCH
+		-------Reiniciando corrida-----------
+			INSERT INTO Corrida (FechaOperacion,
+						 TipoRegistro,
+						 PostTime)
+			VALUES(@FechaActual,
+				   1,
+				   GETDATE())
+			SET @IdUltimaCorrida=SCOPE_IDENTITY();
+
+			INSERT INTO DetalleCorrida (IdCorrida,
+										TipoOperacionXML,
+										RefID)
+			VALUES(@IdUltimaCorrida,
+				   4,
+				   @SecItera)
+			SET @IdUltimODetalleCorrida=SCOPE_IDENTITY();
+
+			INSERT INTO Bitacora (IdTipoOperacion,
+								  Texto,
+								  Fecha,
+								  IdTipoBitacora)
+			VALUES(4,
+				   'Hubo error en el registro numero '+convert(varchar, @SecItera)+
+				   ' procesando desasociar deducciones en '+convert(varchar, @FechaActual),
+				   @FechaActual,
+				   2)
+		END CATCH
 	END
 	DROP TABLE #TempDeasocia
 
