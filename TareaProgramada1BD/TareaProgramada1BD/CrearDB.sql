@@ -173,6 +173,7 @@ CREATE TABLE DetalleCorrida (Id INT IDENTITY (1,1) PRIMARY KEY
 GO
 
 CREATE TABLE Bitacora (Id INT IDENTITY (1,1) PRIMARY KEY,
-						IdDetalleCorrida INT,
-						Texto VARCHAR(100)
-						,FOREIGN KEY (IdDetalleCorrida) REFERENCES DetalleCorrida (Id))
+						IdTipoOperacion INT,
+						Texto VARCHAR(100),
+						Fecha DATE,
+						FOREIGN KEY (IdTipoOperacion) REFERENCES TipoOperacion (Id))

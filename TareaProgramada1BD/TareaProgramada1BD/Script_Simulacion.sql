@@ -311,14 +311,16 @@ BEGIN
 				DC.TipoOperacionXML=1;
 
 
-			INSERT INTO Bitacora (IdDetalleCorrida,
-	   							  Texto)
-			VALUES(@IdUltimoDetalleCorrida,
-				   'Nueva iteracion procesando nuevos empleados inciando en '+convert(varchar, @SecItera))
+			INSERT INTO Bitacora (IdTipoOperacion,
+								  Texto,
+								  Fecha)
+			VALUES(1,
+				   'Nueva iteracion procesando nuevos empleados inciando en '+convert(varchar, @SecItera),
+				   @FechaActual)
 			BEGIN TRY
 				WHILE(@SecItera<=@SecFinal)
 				BEGIN
-				PRINT('SecItera '+convert(varchar, @SecItera)+' SecFinal '+convert(varchar, @SecFinal));
+				--PRINT('SecItera '+convert(varchar, @SecItera)+' SecFinal '+convert(varchar, @SecFinal));
 					SELECT 
 						@InEmpleadoNombre=T.Nombre,
 						@InEmpleadoIdTipoIdentificacion=T.IdTipoIdentificacion,
@@ -359,10 +361,12 @@ BEGIN
 					SET @SecItera=@SecItera+1;
 				END
 				SET @Terminar=1;
-				INSERT INTO Bitacora (IdDetalleCorrida,
-											Texto)
-				VALUES(@IdUltimoDetalleCorrida,
-					   'Se finalizó procesando nuevos empleados en '+convert(varchar, @FechaActual))
+				INSERT INTO Bitacora (IdTipoOperacion,
+									  Texto,
+									  Fecha)
+				VALUES(1,
+					   'Se finalizó procesando nuevos empleados en '+convert(varchar, @FechaActual),
+					   @FechaActual)
 			END TRY
 			BEGIN CATCH
 			-------Reiniciando corrida-----------
@@ -382,11 +386,13 @@ BEGIN
 					   @SecItera)
 				SET @IdUltimODetalleCorrida=SCOPE_IDENTITY();
 
-				INSERT INTO Bitacora (IdDetalleCorrida,
-											Texto)
-				VALUES(@IdUltimoDetalleCorrida,
+				INSERT INTO Bitacora (IdTipoOperacion,
+									  Texto,
+									  Fecha)
+				VALUES(1,
 					   'Hubo error en el registro numero '+convert(varchar, @SecItera)+
-					   ' procesando nuevos empleados en '+convert(varchar, @FechaActual))
+					   ' procesando nuevos empleados en '+convert(varchar, @FechaActual),
+					   @FechaActual)
 			END CATCH
 		END
 		DROP TABLE #TempEmpleados
