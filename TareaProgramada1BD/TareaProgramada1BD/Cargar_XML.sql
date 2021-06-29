@@ -192,7 +192,17 @@ CREATE PROCEDURE dbo.InsertarTipoOperacion AS
 
 GO
 
+CREATE PROCEDURE dbo.InsertarBitacora AS
+
+	INSERT INTO TipoBitacora (Nombre)
+	VALUES('Inicio de corrida'),
+		  ('Error en la corrida'),
+		  ('Finalización de la corrida')
+
+GO
+
 EXECUTE InsertarCatalogos
 --Execute insertarEmpleado
 EXECUTE InsertarUsuario
 EXECUTE InsertarTipoOperacion
+EXECUTE InsertarBitacora

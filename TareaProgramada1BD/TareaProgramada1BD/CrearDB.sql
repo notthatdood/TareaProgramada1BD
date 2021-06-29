@@ -172,8 +172,14 @@ CREATE TABLE DetalleCorrida (Id INT IDENTITY (1,1) PRIMARY KEY
 							,FOREIGN KEY (TipoOperacionXML) REFERENCES TipoOperacion (Id)) 
 GO
 
+CREATE TABLE TipoBitacora (Id INT IDENTITY (1,1) PRIMARY KEY,
+						   Nombre VARCHAR(30)) 
+GO
+
 CREATE TABLE Bitacora (Id INT IDENTITY (1,1) PRIMARY KEY,
 						IdTipoOperacion INT,
 						Texto VARCHAR(100),
 						Fecha DATE,
-						FOREIGN KEY (IdTipoOperacion) REFERENCES TipoOperacion (Id))
+						IdTipoBitacora INT,
+						FOREIGN KEY (IdTipoOperacion) REFERENCES TipoOperacion (Id),
+						FOREIGN KEY (IdTipoBitacora) REFERENCES TipoBitacora (Id))

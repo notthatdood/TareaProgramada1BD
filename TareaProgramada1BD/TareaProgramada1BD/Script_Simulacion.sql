@@ -313,10 +313,12 @@ BEGIN
 
 			INSERT INTO Bitacora (IdTipoOperacion,
 								  Texto,
-								  Fecha)
+								  Fecha,
+								  IdTipoBitacora)
 			VALUES(1,
 				   'Nueva iteracion procesando nuevos empleados inciando en '+convert(varchar, @SecItera),
-				   @FechaActual)
+				   @FechaActual,
+				   1)
 			BEGIN TRY
 				WHILE(@SecItera<=@SecFinal)
 				BEGIN
@@ -363,10 +365,12 @@ BEGIN
 				SET @Terminar=1;
 				INSERT INTO Bitacora (IdTipoOperacion,
 									  Texto,
-									  Fecha)
+									  Fecha,
+									  IdTipoBitacora)
 				VALUES(1,
 					   'Se finalizó procesando nuevos empleados en '+convert(varchar, @FechaActual),
-					   @FechaActual)
+					   @FechaActual,
+					   3)
 			END TRY
 			BEGIN CATCH
 			-------Reiniciando corrida-----------
@@ -388,11 +392,13 @@ BEGIN
 
 				INSERT INTO Bitacora (IdTipoOperacion,
 									  Texto,
-									  Fecha)
+									  Fecha,
+									  IdTipoBitacora)
 				VALUES(1,
 					   'Hubo error en el registro numero '+convert(varchar, @SecItera)+
 					   ' procesando nuevos empleados en '+convert(varchar, @FechaActual),
-					   @FechaActual)
+					   @FechaActual,
+					   2)
 			END CATCH
 		END
 		DROP TABLE #TempEmpleados

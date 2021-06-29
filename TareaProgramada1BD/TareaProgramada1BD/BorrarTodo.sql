@@ -33,6 +33,7 @@ BEGIN
 	DROP TABLE DetalleCorrida;
 	DROP TABLE TipoOperacion;
 	DROP TABLE Bitacora;
+	DROP TABLE TipoBitacora;
 	DROP PROCEDURE AsociarEmpleadoConFijaNoObligatoria;
 	DROP PROCEDURE AsociarEmpleadoConMes;
 	DROP PROCEDURE AsociarEmpleadoConPorcentualNoObligatoria;
@@ -57,5 +58,6 @@ BEGIN
 	DROP PROCEDURE MarcarAsistencia;
 	DROP PROCEDURE ActualizarSalarioEmpleado;
 	DROP PROCEDURE InsertarTipoOperacion;
+	DROP PROCEDURE InsertarBitacora;
 	SET @i=@i+1;
 END
