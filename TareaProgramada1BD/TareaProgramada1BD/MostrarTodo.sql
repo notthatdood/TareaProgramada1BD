@@ -27,5 +27,5 @@ SELECT * FROM Corrida;
 SELECT * FROM DetalleCorrida;
 SELECT * FROM TipoOperacion;
 SELECT * FROM Bitacora;
-
 SELECT * FROM Bitacora B WHERE B.IdTipoBitacora=2;
+SELECT * FROM HistorialPagina;

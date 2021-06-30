@@ -69,5 +69,6 @@ BEGIN
 	DROP PROCEDURE ActualizarDeduccionXEmpleadoXMes;
 	DROP PROCEDURE InsertarMovDeduccion;
 	DROP PROCEDURE ActualizarPlanillaMensualXEmpleado;
+	DROP TABLE HistorialPagina;
 	SET @i=@i+1;
 END

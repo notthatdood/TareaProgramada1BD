@@ -184,3 +184,10 @@ CREATE TABLE Bitacora (Id INT IDENTITY (1,1) PRIMARY KEY,
 						IdTipoBitacora INT,
 						FOREIGN KEY (IdTipoOperacion) REFERENCES TipoOperacion (Id),
 						FOREIGN KEY (IdTipoBitacora) REFERENCES TipoBitacora (Id))
+GO
+
+CREATE TABLE HistorialPagina (Id INT IDENTITY (1,1) PRIMARY KEY,
+						Texto VARCHAR(500),
+						Texto2 VARCHAR(500),
+						Fecha DATETIME)
+GO

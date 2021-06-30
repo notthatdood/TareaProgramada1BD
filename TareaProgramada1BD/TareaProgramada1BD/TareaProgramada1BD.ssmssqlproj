@@ -3,10 +3,10 @@
   <Items>
     <LogicalFolder Name="Connections" Type="2" Sorted="true">
       <Items>
-        <ConnectionNode Name="DESKTOP-TE607J4\MSSQLSERVER02:DESKTOP-TE607J4\1001001222">
-          <Created>2021-05-18T02:08:31.3722798-06:00</Created>
+        <ConnectionNode Name="DESKTOP-TE607J4\BASESDEDATOS:DESKTOP-TE607J4\1001001222">
+          <Created>2021-06-29T15:28:49.2263863-06:00</Created>
           <Type>SQL</Type>
-          <Server>DESKTOP-TE607J4\MSSQLSERVER02</Server>
+          <Server>DESKTOP-TE607J4\BASESDEDATOS</Server>
           <UserName />
           <Authentication>Windows Authentication</Authentication>
           <InitialDB />
@@ -19,59 +19,71 @@
     </LogicalFolder>
     <LogicalFolder Name="Queries" Type="0" Sorted="true">
       <Items>
+        <FileNode Name="BorrarSP.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>BorrarSP.sql</FullPath>
+        </FileNode>
         <FileNode Name="BorrarTodo.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>BorrarTodo.sql</FullPath>
         </FileNode>
         <FileNode Name="Cargar_XML.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>Cargar_XML.sql</FullPath>
         </FileNode>
         <FileNode Name="CrearDB.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>CrearDB.sql</FullPath>
         </FileNode>
         <FileNode Name="MostrarTodo.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>MostrarTodo.sql</FullPath>
         </FileNode>
         <FileNode Name="Script_Simulacion.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>Script_Simulacion.sql</FullPath>
         </FileNode>
         <FileNode Name="SP_Pagina.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>SP_Pagina.sql</FullPath>
         </FileNode>
         <FileNode Name="SP_Simulacion.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>SP_Simulacion.sql</FullPath>
         </FileNode>
         <FileNode Name="SP_Tarea1.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>SP_Tarea1.sql</FullPath>
         </FileNode>
         <FileNode Name="Trigger.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\MSSQLSERVER02:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>DESKTOP-TE607J4\MSSQLSERVER02</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-TE607J4\BASESDEDATOS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-TE607J4\BASESDEDATOS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>Trigger.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Vistas.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>Vistas.sql</FullPath>
         </FileNode>
       </Items>
     </LogicalFolder>

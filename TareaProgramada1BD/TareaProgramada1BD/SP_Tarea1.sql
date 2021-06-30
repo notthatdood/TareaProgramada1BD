@@ -1,20 +1,16 @@
 Use TareaProgramada;
 GO
 
-/*CREATE PROCEDURE BorrarEmpleados
-	@InEmpleadoId INT,
-	@OutResultCode INT OUTPUT
+CREATE PROCEDURE BorrarEmpleados
+	@InEmpleadoId INT
 
 	AS
 	BEGIN
 		SET NOCOUNT ON;
 		BEGIN TRY
-			SELECT
-				@OutResultCode=0;
 			IF NOT EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId)
 			OR EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId AND Activo='0')
 				BEGIN
-					SET @OutResultCode=50001; --El empleado no existe
 					RETURN
 				END;
 			UPDATE Empleado
@@ -33,7 +29,6 @@ GO
 			GETDATE()
 			)
 
-			SET @OutResultCode=50005;
 		END CATCH
 		SET NOCOUNT OFF;
 	END
@@ -41,7 +36,7 @@ GO
 --DECLARE @ResultCode INT
 --EXECUTE BorrarEmpleados 'Id', @ResultCode OUTPUT
 --SELECT @ResultCode
-GO*/
+GO
 
 CREATE PROCEDURE BorrarPuestos
 	@InPuestoId INT,
@@ -90,27 +85,48 @@ CREATE PROCEDURE EditarEmpleados
 	@InEmpleadoNombre VARCHAR(50),
 	@InEmpleadoIdTipoIdentificacion INT,
 	@InEmpleadoValorDocumentoIdentificacion INT,
-	@InEmpleadoFechaNacimiento DATE,
 	@InEmpleadoIdPuesto INT,
-	@InEmpleadoIdDepartamento INT,
-	@OutResultCode INT OUTPUT
+	@InEmpleadoIdDepartamento INT
 
 	AS
 	BEGIN
 		SET NOCOUNT ON;
 		BEGIN TRY
-			SELECT
-				@OutResultCode=0;
 			IF NOT EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId)
 			OR EXISTS(SELECT 1 FROM Empleado C WHERE C.Id=@InEmpleadoId AND Activo='0')
 				BEGIN
-					SET @OutResultCode=50001; --El empleado no existe
 					RETURN
 				END;
+			DECLARE @InEmpleadoNombre2 VARCHAR(50), @InEmpleadoIdTipoIdentificacion2 INT,
+			@InEmpleadoValorDocumentoIdentificacion2 INT, @InEmpleadoIdPuesto2 INT,
+			@InEmpleadoIdDepartamento2 INT, @Aux INT;
+
+			SELECT @InEmpleadoNombre2=E.Nombre, @InEmpleadoIdTipoIdentificacion2=E.IdTipoIdentificacion,
+			@InEmpleadoValorDocumentoIdentificacion2=E.ValorDocumentoIdentificacion,
+			@InEmpleadoIdPuesto2=E.IdPuesto,
+			@InEmpleadoIdDepartamento2=E.IdDepartamento FROM Empleado E
+			WHERE E.Id=@InEmpleadoId;
+
+			INSERT INTO HistorialPagina(Texto, Fecha)
+			VALUES ('Empleado '+convert(varchar, @InEmpleadoId)+'Nombre '+
+			convert(varchar, @InEmpleadoNombre2)+' IdTipoIdentificacion '+convert(varchar, @InEmpleadoIdTipoIdentificacion2)
+			+' ValorDocIdentificacion '+convert(varchar, @InEmpleadoValorDocumentoIdentificacion2)
+			+' IdPuesto '+convert(varchar, @InEmpleadoIdPuesto2)+' IdDepartamento '
+			+convert(varchar, @InEmpleadoIdDepartamento2),
+			GETDATE())
+
+			SET @Aux=SCOPE_IDENTITY();
+
+			UPDATE HistorialPagina SET Texto2='Nombre '+
+			convert(varchar, @InEmpleadoNombre)+' IdTipoIdentificacion '+
+			convert(varchar, @InEmpleadoIdTipoIdentificacion)
+			+' ValorDocIdentificacion '+convert(varchar, @InEmpleadoValorDocumentoIdentificacion)
+			+' IdPuesto '+convert(varchar, @InEmpleadoIdPuesto)+' IdDepartamento '
+			+convert(varchar, @InEmpleadoIdDepartamento) WHERE HistorialPagina.Id=@Aux
+
 			UPDATE Empleado
 			SET Nombre=@InEmpleadoNombre, IdTipoIdentificacion=@InEmpleadoIdTipoIdentificacion,
 			ValorDocumentoIdentificacion=@InEmpleadoValorDocumentoIdentificacion,
-			FechaNacimiento=@InEmpleadoFechaNacimiento,
 			IdPuesto=@InEmpleadoIdPuesto, IdDepartamento=@InEmpleadoIdDepartamento
 			WHERE Id=@InEmpleadoId and Activo='1'
 		END TRY
@@ -126,14 +142,17 @@ CREATE PROCEDURE EditarEmpleados
 			GETDATE()
 			)
 		
-			SET @OutResultCode=50005;
 		END CATCH
 		SET NOCOUNT OFF;
 	END
 
+--1	Josefa Gallego Munoz	1	39936325	1	7	1982-09-20	JGallego	6135	1
+--DROP PROCEDURE EditarEmpleados
+
+
 --DECLARE @ResultCode INT
---EXECUTE EditarEmpleados 'Id', 'Nombre', 'TipoIdentificacion',
---'ValorDocIdentificacion', 'FechaNacimiento', 'IdPuesto', 'IdDepartamento', @ResultCode OUTPUT
+--EXECUTE EditarEmpleados '1', 'Josefa Gallego Munoz', '1','1', '1', '1'
+-- 
 --SELECT @ResultCode
 GO
 
@@ -242,7 +261,7 @@ CREATE PROCEDURE ListarDepartamento
 
 --EXECUTE ListarDepartamento
 GO
-
+/*
 CREATE PROCEDURE ListarEmpleados
 
 	AS
@@ -268,7 +287,7 @@ CREATE PROCEDURE ListarEmpleados
 
 --EXECUTE ListarEmpleados
 GO
-
+*/
 CREATE PROCEDURE ListarPuestos
 
 	AS
