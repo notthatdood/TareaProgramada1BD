@@ -1,5 +1,5 @@
-CREATE DATABASE TareaProgramada
-GO
+--CREATE DATABASE TareaProgramada
+--GO
 
 USE TareaProgramada
 GO
